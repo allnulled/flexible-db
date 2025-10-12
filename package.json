@@ -1,0 +1,13 @@
+{
+  "name": "@allnulled/flexible-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "flexible-db.js",
+  "scripts": {
+    "dev": "npx nodemon -w 'flexible-db.js' -w 'test.js' -w 'test-on-readme.js' -e 'js' -x 'node test.js && node test-on-readme.js'",
+    "test": "node test.js"
+  },
+  "keywords": [],
+  "author": "allnulled",
+  "license": "WTFPL"
+}
