@@ -62,6 +62,7 @@
     static defaultOptions = {
       trace: false,
       onPersist: (db) => {},
+      onTrigger: (event, parameters, db) => {},
     };
 
     static knownTypes = ["boolean", "integer", "float", "string", "object", "array", "object-reference", "array-reference"];
@@ -122,10 +123,12 @@
       }
       this.$schema = schema;
       this.persistDatabase();
+      this.triggerDatabase("setSchema", [schema]);
     }
 
     getSchema() {
       this.trace("getSchema");
+      this.triggerDatabase("getSchema", [schema]);
       return this.$schema;
     }
 
@@ -165,6 +168,7 @@
 
     dehydrate() {
       this.trace("dehydrate");
+      this.triggerDatabase("dehydrate", []);
       return JSON.stringify({
         ids: this.$ids,
         data: this.$data,
@@ -183,6 +187,7 @@
       this.$ids = db.ids;
       this.$data = db.data;
       this.$schema = db.schema;
+      this.triggerDatabase("hydrate", [stringifiedDatabase]);
       this.persistDatabase();
     }
 
@@ -191,6 +196,7 @@
       this.$ids = {};
       this.$data = {};
       this.$schema = {};
+      this.triggerDatabase("reset", []);
       this.persistDatabase();
     }
 
@@ -238,6 +244,11 @@
       this.$options.onPersist(this);
     }
 
+    triggerDatabase(event, parameters) {
+      this.trace("triggerDatabase");
+      this.$options.onTrigger(event, parameters, this);
+    }
+
   };
 
   const FlexibleDBCrudLayer = class extends FlexibleDBBasicLayer {
@@ -249,6 +260,7 @@
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
       }
+      this.triggerDatabase("reset", [table, filter]);
       return Object.values(this.$data[table]).filter(filter);
     }
 
@@ -265,6 +277,7 @@
       this.ensureTable(table);
       const newId = this.consumeIdOf(table);
       this.$data[table][newId] = { id: newId, ...value };
+      this.triggerDatabase("insertOne", [table, value]);
       this.persistDatabase();
       return newId;
     }
@@ -290,6 +303,7 @@
         this.$data[table][newId] = { id: newId, ...value };
         newIds.push(newId);
       }
+      this.triggerDatabase("insertMany", [table, values]);
       this.persistDatabase();
       return newIds;
     }
@@ -307,6 +321,7 @@
         assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «updateOne»`);
       }
       this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id });
+      this.triggerDatabase("updateOne", [table, id, properties]);
       this.persistDatabase();
       return true;
     }
@@ -338,6 +353,7 @@
           modifiedIds.push(id);
         }
       }
+      this.triggerDatabase("updateMany", [table, filter, properties]);
       this.persistDatabase();
       return modifiedIds;
     }
@@ -356,6 +372,7 @@
         this.checkIntegrityFree(table, id);
       }
       delete this.$data[table][id];
+      this.triggerDatabase("deleteOne", [table, id]);
       this.persistDatabase();
       return true;
     }
@@ -384,6 +401,7 @@
           deletedIds.push(id);
         }
       }
+      this.triggerDatabase("deleteMany", [table, filter]);
       this.persistDatabase();
       return deletedIds;
     }

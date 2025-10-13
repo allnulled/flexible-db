@@ -60,6 +60,10 @@ Acepta opciones mediante `options:Object` donde puedes especificar:
 - `onPersist:Function` si quieres establecer un método automático de persistencia
    - La función recibe el objeto `db` que tiene el método `db.dehydrate()` al uso de persistencia fácil
    - Puedes ver el `test-of-persistence.js` para ver un ejemplo de uso
+- `onTrigger:Function` si quieres establecer un método automático de trigger
+   - La función recibe los 3 parámetros:
+      - `event:String, parameters:Array, db:Object`
+   - Puedes ver el `test-of-trigger.js` para ver un ejemplo de uso
 
 ### `db.getSchema(): Object`
 
