@@ -20,8 +20,8 @@ npm i -s @allnulled/flexible-db
    - "string"
    - "object"
    - "array"
-   - "object-reference"
-   - "array-reference"
+   - "object-reference" (integridad referencial)
+   - "array-reference" (integridad referencial)
 - Soporta métodos de esquema:
    - getSchema
    - setSchema
@@ -36,6 +36,79 @@ npm i -s @allnulled/flexible-db
    - updateMany
    - deleteOne
    - deleteMany
+
+## API
+
+### `db = FlexibleDB.create(): Object`
+
+Crea una instancia de base de datos.
+
+Tiene:
+
+- `db.$ids`
+- `db.$data`
+- `db.$schema`
+
+### `db.getSchema(): Object`
+
+Devuelve el esquema de datos, en `this.$schema`.
+
+### `db.setSchema(schema:Object): void`
+
+El `schema` debe ser un objeto válido que represente al esquema de datos.
+
+Se pondrá en `this.$schema`.
+
+Se espera un objeto que:
+  - contenga: `<table>.<column>.type = `
+     - `"boolean"`
+     - `"integer"`
+     - `"float"`
+     - `"string"`
+     - `"object"`
+     - `"array"`
+     - `"object-reference"`
+        - con `referredTable = <una tabla conocida por schema>`
+     - `"array-reference"`
+        - con `referredTable = <una tabla conocida por schema>`
+
+### `db.dehydrate(): String`
+
+Devuelve un `String` representando la base de datos.
+
+### `db.hydrate(stringifiedDatabase:String): void`
+
+Sobreescribe los `$ids`, `$data` y `$schema` de la base de datos con el `stringifiedDatabase` proporcionado.
+
+En `stringifiedDatabase` se espera un `String` como el que devuelve `db.dehydrate()`.
+
+### `db.selectMany(table:String, filter:Function): Array`
+
+Devuelve un `Array` con los registros donde la función `filter` ha devuelto `true`.
+
+### `db.insertOne(table:String, value:Object): Integer`
+
+Inserta un registro y devuelve su `id`.
+
+### `db.insertMany(table:String, values:Array<Object>): Array<Integer>`
+
+Inserta múltiples registros y devuelve sus `ids`.
+
+### `db.updateOne(table:String, id:Integer, properties:Object): Boolean`
+
+Actualiza un registro concreto y devuelve `true`.
+
+### `db.updateMany(table:String, filter:Function, properties:Object): Array<Integer>`
+
+Actualiza múltiples registros y devuelve sus `id`s en un `Array`.
+
+### `db.deleteOne(table:String, id:Integer): Boolean`
+
+Elimina un registro concreto y devuelve sus `true`.
+
+### `db.deleteMany(table:String, filter:Function): Array<Integer>`
+
+Elimina múltiples registros y devuelve sus `id`s en un `Array`.
 
 ## Uso
 
