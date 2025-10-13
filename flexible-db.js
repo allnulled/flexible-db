@@ -61,6 +61,7 @@
 
     static defaultOptions = {
       trace: false,
+      onPersist: (db) => {},
     };
 
     static knownTypes = ["boolean", "integer", "float", "string", "object", "array", "object-reference", "array-reference"];
@@ -73,16 +74,20 @@
     }
 
     trace(methodId) {
-
+      if(this.$options.trace) {
+        console.log("[trace][flexible-db] " + methodId);
+      }
     }
 
     ensureTable(table) {
+      this.trace("ensureTable");
       if(!(table in this.$data)) {
         this.$data[table] = {};
       }
     }
 
     consumeIdOf(table) {
+      this.trace("consumeIdOf");
       assertion(typeof table === "string", "Parameter «table» must be a string on «consumeIdOf»");
       assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «consumeIdOf»");
       if (!(table in this.$ids)) {
@@ -92,6 +97,7 @@
     }
 
     setSchema(schema) {
+      this.trace("setSchema");
       assertion(typeof schema === "object", "Parameter «schema» must be an object on «setSchema»");
       const tableIds = Object.keys(schema);
       for (let indexTables = 0; indexTables < tableIds.length; indexTables++) {
@@ -115,13 +121,16 @@
         }
       }
       this.$schema = schema;
+      this.persistDatabase();
     }
 
     getSchema() {
+      this.trace("getSchema");
       return this.$schema;
     }
 
     validateProperties(table, value, contextId) {
+      this.trace("validateProperties");
       const properties = Object.keys(value);
       const tableMetadata = this.$schema[table];
       Iterating_properties:
@@ -155,6 +164,7 @@
     }
 
     dehydrate() {
+      this.trace("dehydrate");
       return JSON.stringify({
         ids: this.$ids,
         data: this.$data,
@@ -163,6 +173,7 @@
     }
 
     hydrate(stringifiedDatabase) {
+      this.trace("hydrate");
       assertion(typeof stringifiedDatabase === "string", `Parameter «stringifiedDatabase» must be a string on «hydrate»`);
       const db = JSON.parse(stringifiedDatabase);
       assertion(typeof db === "object", `Parameter «stringifiedDatabase» must be a JSON of type object on «hydrate»`);
@@ -172,15 +183,19 @@
       this.$ids = db.ids;
       this.$data = db.data;
       this.$schema = db.schema;
+      this.persistDatabase();
     }
 
     reset() {
+      this.trace("reset");
       this.$ids = {};
       this.$data = {};
       this.$schema = {};
+      this.persistDatabase();
     }
 
     checkIntegrityFree(table, id) {
+      this.trace("checkIntegrityFree");
       const tableIds = Object.keys(this.$schema);
       Iterating_tables:
       for(let indexTables=0; indexTables<tableIds.length; indexTables++) {
@@ -218,11 +233,17 @@
       }
     }
 
+    persistDatabase() {
+      this.trace("persistDatabase");
+      this.$options.onPersist(this);
+    }
+
   };
 
   const FlexibleDBCrudLayer = class extends FlexibleDBBasicLayer {
 
     selectMany(table, filter = SELECT_ALL_FILTER) {
+      this.trace("selectMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «selectMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
@@ -232,6 +253,7 @@
     }
 
     insertOne(table, value) {
+      this.trace("insertOne");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «insertOne»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertOne»");
@@ -243,10 +265,12 @@
       this.ensureTable(table);
       const newId = this.consumeIdOf(table);
       this.$data[table][newId] = { id: newId, ...value };
+      this.persistDatabase();
       return newId;
     }
 
     insertMany(table, values) {
+      this.trace("insertMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «insertMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertMany»");
@@ -266,10 +290,12 @@
         this.$data[table][newId] = { id: newId, ...value };
         newIds.push(newId);
       }
+      this.persistDatabase();
       return newIds;
     }
 
     updateOne(table, id, properties) {
+      this.trace("updateOne");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «updateOne»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateOne»");
@@ -281,10 +307,12 @@
         assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «updateOne»`);
       }
       this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id });
+      this.persistDatabase();
       return true;
     }
 
     updateMany(table, filter, properties) {
+      this.trace("updateMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «updateMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateMany»");
@@ -310,10 +338,12 @@
           modifiedIds.push(id);
         }
       }
+      this.persistDatabase();
       return modifiedIds;
     }
 
     deleteOne(table, id) {
+      this.trace("deleteOne");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «deleteOne»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteOne»");
@@ -326,10 +356,12 @@
         this.checkIntegrityFree(table, id);
       }
       delete this.$data[table][id];
+      this.persistDatabase();
       return true;
     }
 
     deleteMany(table, filter) {
+      this.trace("deleteMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «deleteMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteMany»");
@@ -352,6 +384,7 @@
           deletedIds.push(id);
         }
       }
+      this.persistDatabase();
       return deletedIds;
     }
 

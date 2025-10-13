@@ -19,40 +19,47 @@ npm i -s @allnulled/flexible-db
 - Soporta referencias de objetos y de listas externas
 - Soporta integridad de estas referencias
 - Soporta los tipos:
-   - "boolean"
-   - "integer"
-   - "float"
-   - "string"
-   - "object"
-   - "array"
-   - "object-reference" (integridad referencial)
-   - "array-reference" (integridad referencial)
+   - `"boolean"`
+   - `"integer"`
+   - `"float"`
+   - `"string"`
+   - `"object"`
+   - `"array"`
+   - `"object-reference"` (con integridad referencial)
+   - `"array-reference"` (con integridad referencial)
 - Soporta métodos de esquema:
-   - getSchema
-   - setSchema
+   - `getSchema`
+   - `setSchema`
 - Soporta métodos de persistencia:
-   - hydrate
-   - dehydrate
+   - `hydrate`
+   - `dehydrate`
 - Soporta métodos de CRUD:
-   - selectMany
-   - insertOne
-   - insertMany
-   - updateOne
-   - updateMany
-   - deleteOne
-   - deleteMany
+   - `selectMany`
+   - `insertOne`
+   - `insertMany`
+   - `updateOne`
+   - `updateMany`
+   - `deleteOne`
+   - `deleteMany`
 
 ## API
 
-### `db = FlexibleDB.create(): Object`
+### `db = FlexibleDB.create(options:Object): Object`
 
 Crea una instancia de base de datos.
 
-Tiene:
+Dentro contiene:
 
 - `db.$ids`
 - `db.$data`
 - `db.$schema`
+
+Acepta opciones mediante `options:Object` donde puedes especificar:
+
+- `trace = true` si quieres activar el traceo de los métodos
+- `onPersist:Function` si quieres establecer un método automático de persistencia
+   - La función recibe el objeto `db` que tiene el método `db.dehydrate()` al uso de persistencia fácil
+   - Puedes ver el `test-of-persistence.js` para ver un ejemplo de uso
 
 ### `db.getSchema(): Object`
 
@@ -73,9 +80,9 @@ Se espera un objeto que:
      - `"object"`
      - `"array"`
      - `"object-reference"`
-        - con `referredTable = <una tabla conocida por schema>`
+        - con `<table>.<column>.referredTable = <una tabla conocida por schema>`
      - `"array-reference"`
-        - con `referredTable = <una tabla conocida por schema>`
+        - con `<table>.<column>.referredTable = <una tabla conocida por schema>`
 
 ### `db.dehydrate(): String`
 
@@ -116,6 +123,8 @@ Elimina un registro concreto y devuelve sus `true`.
 Elimina múltiples registros y devuelve sus `id`s en un `Array`.
 
 ## Uso
+
+Esto es un ejemplo que demuestra la integridad referencial de objetos y listas:
 
 ```js
 require(__dirname + "/flexible-db.js");
