@@ -2,6 +2,11 @@
 
 Base de datos basada en JavaScript.
 
+## Links
+
+- [Página en Github](https://github.com/allnulled/flexible-db)
+- [Página en NPM](https://www.npmjs.com/package/@allnulled/flexible-db)
+
 ## Instalación
 
 ```
