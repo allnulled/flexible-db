@@ -13,3 +13,8 @@
    - Método `db.trigger(event, parameters)`
    - Opción de `db.$options.onTrigger` para soportar trigger genérico automático
    - Test de persistencia en `test-of-trigger.js`
+
+## Versión 2.0.0
+
+- API asíncrona para todo
+- Soporte de semáforos con `db.$options.onLock` y `db.$options.onUnlock` de serie en node.js

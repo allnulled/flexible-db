@@ -11,7 +11,7 @@
   }
 })(function () {
 
-  const SELECT_ALL_FILTER = function(it) {
+  const SELECT_ALL_FILTER = function (it) {
     return true;
   };
 
@@ -43,9 +43,9 @@
   const FlexibleDBBasicLayer = class {
 
     static AssertionError = AssertionError;
-    
+
     static IntegrityError = IntegrityError;
-    
+
     static assertion = assertion;
 
     static type(typeOfColumn, otherProperties = {}) {
@@ -61,8 +61,30 @@
 
     static defaultOptions = {
       trace: false,
-      onPersist: (db) => {},
-      onTrigger: (event, parameters, db) => {},
+      lockingCheckInterval: 10,
+      lockingFile: typeof global !== "undefined" ? require("path").resolve(process.cwd(), "db-locker.txt") : false,
+      onPersist: function (db) { },
+      onTrigger: function (event, parameters, db) { },
+      onLock: async function (db) {
+        if (typeof global === "undefined") return false;
+        const fs = require("fs").promises;
+        let isLocked = true;
+        while (isLocked) {
+          const contents = await fs.readFile(db.$options.lockingFile, "utf8");
+          if (contents === "0") {
+            isLocked = false;
+          }
+          await new Promise(function (resolve) {
+            setTimeout(resolve, db.$options.lockingCheckInterval);
+          });
+        }
+        await fs.writeFile(db.$options.lockingFile, "1", "utf8");
+      },
+      onUnlock: async function (db) {
+        if (typeof global === "undefined") return false;
+        const fs = require("fs").promises;
+        fs.writeFile(db.$options.lockingFile, "0", "utf8");
+      },
     };
 
     static knownTypes = ["boolean", "integer", "float", "string", "object", "array", "object-reference", "array-reference"];
@@ -72,17 +94,20 @@
       this.$ids = {};
       this.$data = {};
       this.$schema = false;
+      if (typeof global !== "undefined") {
+        require("fs").writeFileSync(this.$options.lockingFile, "0", "utf8");
+      }
     }
 
     trace(methodId) {
-      if(this.$options.trace) {
+      if (this.$options.trace) {
         console.log("[trace][flexible-db] " + methodId);
       }
     }
 
     ensureTable(table) {
       this.trace("ensureTable");
-      if(!(table in this.$data)) {
+      if (!(table in this.$data)) {
         this.$data[table] = {};
       }
     }
@@ -97,38 +122,46 @@
       return ++this.$ids[table];
     }
 
-    setSchema(schema) {
+    async setSchema(schema) {
       this.trace("setSchema");
-      assertion(typeof schema === "object", "Parameter «schema» must be an object on «setSchema»");
-      const tableIds = Object.keys(schema);
-      for (let indexTables = 0; indexTables < tableIds.length; indexTables++) {
-        const tableId = tableIds[indexTables];
-        const tableMetadata = schema[tableId];
-        assertion(typeof tableMetadata === "object", `Schema table «${tableId}» must be an object on «setSchema»`);
-        const columnIds = Object.keys(tableMetadata);
-        for (let indexColumns = 0; indexColumns < columnIds.length; indexColumns++) {
-          const columnId = columnIds[indexColumns];
-          const columnMetadata = tableMetadata[columnId];
-          assertion(typeof columnMetadata === "object", `Schema column «${tableId}.${columnId}» must be an object on «setSchema»`);
-          assertion(typeof columnMetadata.type === "string", `Schema column type «${tableId}.${columnId}» must be a string on «setSchema»`);
-          assertion(this.constructor.knownTypes.indexOf(columnMetadata.type) !== -1, `Schema column type «${tableId}.${columnId}» must be a known type, this is «${this.constructor.knownTypes.join("|")}» on «setSchema»`);
-          if(columnMetadata.type === "object-reference") {
-            assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
-            assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
-          } else if(columnMetadata.type === "array-reference") {
-            assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
-            assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
+      await this.$options.onLock(this);
+      try {
+        assertion(typeof schema === "object", "Parameter «schema» must be an object on «setSchema»");
+        const tableIds = Object.keys(schema);
+        for (let indexTables = 0; indexTables < tableIds.length; indexTables++) {
+          const tableId = tableIds[indexTables];
+          const tableMetadata = schema[tableId];
+          assertion(typeof tableMetadata === "object", `Schema table «${tableId}» must be an object on «setSchema»`);
+          const columnIds = Object.keys(tableMetadata);
+          for (let indexColumns = 0; indexColumns < columnIds.length; indexColumns++) {
+            const columnId = columnIds[indexColumns];
+            const columnMetadata = tableMetadata[columnId];
+            assertion(typeof columnMetadata === "object", `Schema column «${tableId}.${columnId}» must be an object on «setSchema»`);
+            assertion(typeof columnMetadata.type === "string", `Schema column type «${tableId}.${columnId}» must be a string on «setSchema»`);
+            assertion(this.constructor.knownTypes.indexOf(columnMetadata.type) !== -1, `Schema column type «${tableId}.${columnId}» must be a known type, this is «${this.constructor.knownTypes.join("|")}» on «setSchema»`);
+            if (columnMetadata.type === "object-reference") {
+              assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
+              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
+            } else if (columnMetadata.type === "array-reference") {
+              assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
+              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
+            }
           }
         }
+        this.$schema = schema;
+        await this.persistDatabase();
+        await this.triggerDatabase("setSchema", [schema]);
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      this.$schema = schema;
-      this.persistDatabase();
-      this.triggerDatabase("setSchema", [schema]);
     }
 
-    getSchema() {
+    async getSchema() {
       this.trace("getSchema");
-      this.triggerDatabase("getSchema", [schema]);
+      await this.triggerDatabase("getSchema", [schema]);
       return this.$schema;
     }
 
@@ -166,9 +199,9 @@
       }
     }
 
-    dehydrate() {
+    async dehydrate() {
       this.trace("dehydrate");
-      this.triggerDatabase("dehydrate", []);
+      await this.triggerDatabase("dehydrate", []);
       return JSON.stringify({
         ids: this.$ids,
         data: this.$data,
@@ -176,61 +209,69 @@
       });
     }
 
-    hydrate(stringifiedDatabase) {
+    async hydrate(stringifiedDatabase) {
       this.trace("hydrate");
-      assertion(typeof stringifiedDatabase === "string", `Parameter «stringifiedDatabase» must be a string on «hydrate»`);
-      const db = JSON.parse(stringifiedDatabase);
-      assertion(typeof db === "object", `Parameter «stringifiedDatabase» must be a JSON of type object on «hydrate»`);
-      assertion(typeof db.ids === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «ids» as object on «hydrate»`);
-      assertion(typeof db.data === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «data» as object on «hydrate»`);
-      assertion(typeof db.schema === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «schema» as object on «hydrate»`);
-      this.$ids = db.ids;
-      this.$data = db.data;
-      this.$schema = db.schema;
-      this.triggerDatabase("hydrate", [stringifiedDatabase]);
-      this.persistDatabase();
+      await this.$options.onLock(this);
+      try {
+        assertion(typeof stringifiedDatabase === "string", `Parameter «stringifiedDatabase» must be a string on «hydrate»`);
+        const db = JSON.parse(stringifiedDatabase);
+        assertion(typeof db === "object", `Parameter «stringifiedDatabase» must be a JSON of type object on «hydrate»`);
+        assertion(typeof db.ids === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «ids» as object on «hydrate»`);
+        assertion(typeof db.data === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «data» as object on «hydrate»`);
+        assertion(typeof db.schema === "object", `Parameter «stringifiedDatabase» must be a JSON of type object containing property «schema» as object on «hydrate»`);
+        this.$ids = db.ids;
+        this.$data = db.data;
+        this.$schema = db.schema;
+        await this.triggerDatabase("hydrate", [stringifiedDatabase]);
+        await this.persistDatabase();
+
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
     }
 
-    reset() {
+    async reset() {
       this.trace("reset");
       this.$ids = {};
       this.$data = {};
       this.$schema = {};
-      this.triggerDatabase("reset", []);
-      this.persistDatabase();
+      await this.triggerDatabase("reset", []);
+      await this.persistDatabase();
     }
 
     checkIntegrityFree(table, id) {
       this.trace("checkIntegrityFree");
       const tableIds = Object.keys(this.$schema);
       Iterating_tables:
-      for(let indexTables=0; indexTables<tableIds.length; indexTables++) {
+      for (let indexTables = 0; indexTables < tableIds.length; indexTables++) {
         const tableId = tableIds[indexTables];
         const columnIds = Object.keys(this.$schema[tableId]);
         Iterating_columns:
-        for(let indexColumns=0; indexColumns<columnIds.length; indexColumns++) {
+        for (let indexColumns = 0; indexColumns < columnIds.length; indexColumns++) {
           const columnId = columnIds[indexColumns];
           const columnMetadata = this.$schema[tableId][columnId];
           const isObjectReference = columnMetadata.type === "object-reference";
           const isArrayReference = columnMetadata.type === "array-reference";
-          if((!isObjectReference) && (!isArrayReference)) {
+          if ((!isObjectReference) && (!isArrayReference)) {
             continue Iterating_columns;
           }
           const isSameTable = columnMetadata.referredTable === table;
-          if(!isSameTable) {
+          if (!isSameTable) {
             continue Iterating_columns;
           }
           const referableRows = Object.values(this.$data[tableId] || {});
-          for(let indexRows=0; indexRows<referableRows.length; indexRows++) {
+          for (let indexRows = 0; indexRows < referableRows.length; indexRows++) {
             const referableRow = referableRows[indexRows];
-            if(isObjectReference) {
+            if (isObjectReference) {
               const referableId = referableRow[columnId];
-              if(referableId === id) {
+              if (referableId === id) {
                 throw new IntegrityError(`Cannot delete «${table}#${id}» because it still exists as object on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
               }
-            } else if(isArrayReference) {
+            } else if (isArrayReference) {
               const referableIds = referableRow[columnId];
-              if(referableIds.indexOf(id) !== -1) {
+              if (referableIds.indexOf(id) !== -1) {
                 throw new IntegrityError(`Cannot delete «${table}#${id}» because it still exists as array item on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
               }
             }
@@ -239,171 +280,213 @@
       }
     }
 
-    persistDatabase() {
+    async persistDatabase() {
       this.trace("persistDatabase");
-      this.$options.onPersist(this);
+      await this.$options.onPersist(this);
     }
 
-    triggerDatabase(event, parameters) {
+    async triggerDatabase(event, parameters) {
       this.trace("triggerDatabase");
-      this.$options.onTrigger(event, parameters, this);
+      await this.$options.onTrigger(event, parameters, this);
     }
 
   };
 
   const FlexibleDBCrudLayer = class extends FlexibleDBBasicLayer {
 
-    selectMany(table, filter = SELECT_ALL_FILTER) {
+    async selectMany(table, filter = SELECT_ALL_FILTER) {
       this.trace("selectMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «selectMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
       }
-      this.triggerDatabase("reset", [table, filter]);
+      await this.triggerDatabase("reset", [table, filter]);
       return Object.values(this.$data[table]).filter(filter);
     }
 
-    insertOne(table, value) {
+    async insertOne(table, value) {
       this.trace("insertOne");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «insertOne»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertOne»");
-        assertion(typeof value === "object", "Parameter «value» must be an object on «insertOne»");
-      }
-      Inserted_value_validation: {
-        this.validateProperties(table, value, "insertOne");
-      }
-      this.ensureTable(table);
-      const newId = this.consumeIdOf(table);
-      this.$data[table][newId] = { id: newId, ...value };
-      this.triggerDatabase("insertOne", [table, value]);
-      this.persistDatabase();
-      return newId;
-    }
-
-    insertMany(table, values) {
-      this.trace("insertMany");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «insertMany»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertMany»");
-        assertion(Array.isArray(values), "Parameter «values» must be an array on «insertMany»");
-      }
-      Inserted_values_validation: {
-        for (let indexValue = 0; indexValue < values.length; indexValue++) {
-          const value = values[indexValue];
-          this.validateProperties(table, value, "insertMany");
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «insertOne»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertOne»");
+          assertion(typeof value === "object", "Parameter «value» must be an object on «insertOne»");
         }
-      }
-      this.ensureTable(table);
-      const newIds = [];
-      for(let indexValues=0; indexValues<values.length; indexValues++) {
-        const value = values[indexValues];
+        Inserted_value_validation: {
+          this.validateProperties(table, value, "insertOne");
+        }
+        this.ensureTable(table);
         const newId = this.consumeIdOf(table);
         this.$data[table][newId] = { id: newId, ...value };
-        newIds.push(newId);
+        await this.triggerDatabase("insertOne", [table, value]);
+        await this.persistDatabase();
+        return newId;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      this.triggerDatabase("insertMany", [table, values]);
-      this.persistDatabase();
-      return newIds;
     }
 
-    updateOne(table, id, properties) {
+    async insertMany(table, values) {
+      this.trace("insertMany");
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «insertMany»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «insertMany»");
+          assertion(Array.isArray(values), "Parameter «values» must be an array on «insertMany»");
+        }
+        Inserted_values_validation: {
+          for (let indexValue = 0; indexValue < values.length; indexValue++) {
+            const value = values[indexValue];
+            this.validateProperties(table, value, "insertMany");
+          }
+        }
+        this.ensureTable(table);
+        const newIds = [];
+        for (let indexValues = 0; indexValues < values.length; indexValues++) {
+          const value = values[indexValues];
+          const newId = this.consumeIdOf(table);
+          this.$data[table][newId] = { id: newId, ...value };
+          newIds.push(newId);
+        }
+        await this.triggerDatabase("insertMany", [table, values]);
+        await this.persistDatabase();
+        return newIds;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    async updateOne(table, id, properties) {
       this.trace("updateOne");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «updateOne»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateOne»");
-        assertion(typeof id === "number", "Parameter «id» must be a number on «updateOne»");
-        assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateOne»");
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «updateOne»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateOne»");
+          assertion(typeof id === "number", "Parameter «id» must be a number on «updateOne»");
+          assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateOne»");
+        }
+        Updated_value_validation: {
+          this.validateProperties(table, properties, "updateOne");
+          assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «updateOne»`);
+        }
+        this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id });
+        await this.triggerDatabase("updateOne", [table, id, properties]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      Updated_value_validation: {
-        this.validateProperties(table, properties, "updateOne");
-        assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «updateOne»`);
-      }
-      this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id });
-      this.triggerDatabase("updateOne", [table, id, properties]);
-      this.persistDatabase();
-      return true;
     }
 
-    updateMany(table, filter, properties) {
+    async updateMany(table, filter, properties) {
       this.trace("updateMany");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «updateMany»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateMany»");
-        assertion(typeof filter === "function", "Parameter «filter» must be a function on «updateMany»");
-        assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateMany»");
-      }
-      Updated_value_validation: {
-        this.validateProperties(table, properties, "updateMany");
-      }
-      const modifiedIds = [];
-      let counter = 0;
-      for(let id in this.$data[table]) {
-        counter++;
-        const value = this.$data[table][id];
-        let isAccepted = false;
-        try {
-          isAccepted = filter(value, counter);
-        } catch (error) {
-          console.log(error);
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «updateMany»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateMany»");
+          assertion(typeof filter === "function", "Parameter «filter» must be a function on «updateMany»");
+          assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateMany»");
         }
-        if(isAccepted) {
-          this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id: parseInt(id) });
-          modifiedIds.push(id);
+        Updated_value_validation: {
+          this.validateProperties(table, properties, "updateMany");
         }
+        const modifiedIds = [];
+        let counter = 0;
+        for (let id in this.$data[table]) {
+          counter++;
+          const value = this.$data[table][id];
+          let isAccepted = false;
+          try {
+            isAccepted = filter(value, counter);
+          } catch (error) {
+            console.log(error);
+          }
+          if (isAccepted) {
+            this.$data[table][id] = Object.assign({}, this.$data[table][id], properties, { id: parseInt(id) });
+            modifiedIds.push(id);
+          }
+        }
+        await this.triggerDatabase("updateMany", [table, filter, properties]);
+        await this.persistDatabase();
+        return modifiedIds;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      this.triggerDatabase("updateMany", [table, filter, properties]);
-      this.persistDatabase();
-      return modifiedIds;
     }
 
-    deleteOne(table, id) {
+    async deleteOne(table, id) {
       this.trace("deleteOne");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «deleteOne»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteOne»");
-        assertion(typeof id === "number", "Parameter «id» must be a number on «deleteOne»");
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «deleteOne»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteOne»");
+          assertion(typeof id === "number", "Parameter «id» must be a number on «deleteOne»");
+        }
+        Deleted_value_validation: {
+          assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «deleteOne»`);
+        }
+        Deleted_integrity_validation: {
+          this.checkIntegrityFree(table, id);
+        }
+        delete this.$data[table][id];
+        await this.triggerDatabase("deleteOne", [table, id]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      Deleted_value_validation: {
-        assertion(id in this.$data[table], `Parameter «id» (in this case «${id}») must be a known id for data table «${table}» on «deleteOne»`);
-      }
-      Deleted_integrity_validation: {
-        this.checkIntegrityFree(table, id);
-      }
-      delete this.$data[table][id];
-      this.triggerDatabase("deleteOne", [table, id]);
-      this.persistDatabase();
-      return true;
     }
 
-    deleteMany(table, filter) {
+    async deleteMany(table, filter) {
       this.trace("deleteMany");
-      Basic_validation: {
-        assertion(typeof table === "string", "Parameter «table» must be a string on «deleteMany»");
-        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteMany»");
-        assertion(typeof filter === "function", "Parameter «filter» must be a function on «deleteMany»");
-      }
-      const deletedIds = [];
-      let counter = 0;
-      for(let id in this.$data[table]) {
-        counter++;
-        const value = this.$data[table][id];
-        let isAccepted = false;
-        try {
-          isAccepted = filter(value, counter);
-        } catch (error) {
-          console.log(error);
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «deleteMany»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «deleteMany»");
+          assertion(typeof filter === "function", "Parameter «filter» must be a function on «deleteMany»");
         }
-        if(isAccepted) {
-          this.checkIntegrityFree(table, id);
-          delete this.$data[table][id];
-          deletedIds.push(id);
+        const deletedIds = [];
+        let counter = 0;
+        for (let id in this.$data[table]) {
+          counter++;
+          const value = this.$data[table][id];
+          let isAccepted = false;
+          try {
+            isAccepted = filter(value, counter);
+          } catch (error) {
+            console.log(error);
+          }
+          if (isAccepted) {
+            this.checkIntegrityFree(table, id);
+            delete this.$data[table][id];
+            deletedIds.push(id);
+          }
         }
+        await this.triggerDatabase("deleteMany", [table, filter]);
+        await this.persistDatabase();
+        return deletedIds;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
       }
-      this.triggerDatabase("deleteMany", [table, filter]);
-      this.persistDatabase();
-      return deletedIds;
     }
 
   }

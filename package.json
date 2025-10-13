@@ -1,7 +1,7 @@
 {
   "name": "@allnulled/flexible-db",
-  "version": "1.0.4",
-  "description": "",
+  "version": "2.0.0",
+  "description": "Base de datos basada en JavaScript",
   "main": "flexible-db.js",
   "scripts": {
     "dev": "npx nodemon -w 'flexible-db.js' -w 'test.js' -w 'test-on-readme.js' -w 'test-of-persistence.js' -w 'test-of-trigger.js' -e 'js' -x 'node test.js && node test-on-readme.js && node test-of-persistence.js && node test-of-trigger.js'",
