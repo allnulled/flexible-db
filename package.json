@@ -4,7 +4,7 @@
   "description": "Base de datos basada en JavaScript",
   "main": "flexible-db.js",
   "scripts": {
-    "dev": "npx nodemon -w 'flexible-db.js' -w 'test.js' -w 'test-on-readme.js' -w 'test-of-persistence.js' -w 'test-of-trigger.js' -e 'js' -x 'node test.js && node test-on-readme.js && node test-of-persistence.js && node test-of-trigger.js'",
+    "dev": "bash dev.sh",
     "test": "node test.js"
   },
   "keywords": [],

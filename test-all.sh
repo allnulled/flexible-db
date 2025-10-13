@@ -1,0 +1,1 @@
+node test.js && node test-on-readme.js && node test-of-persistence.js && node test-of-trigger.js && node test-of-performance.js

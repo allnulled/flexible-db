@@ -1,6 +1,12 @@
 require(__dirname + "/flexible-db.js");
 
-const flexdb = FlexibleDB.create();
+const flexdb = FlexibleDB.create({
+  // lockingFile: __dirname + "/db-locker.txt",
+  // async onLock(db) {},
+  // async onUnlock(db) {},
+  // async onTrigger(event, parameters, db) {},
+  // async onPersist(db) {},
+});
 
 const main = async function () {
 
