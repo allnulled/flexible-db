@@ -146,6 +146,23 @@ Renombra una tabla a otro nombre y devuelve `true`.
 
 Renombra una columna a otro nombre y devuelve `true`.
 
+#### `db.addTable(table:String): Promise<Boolean>`
+
+Añade una tabla en el `db.$schema` y devuelve `true`.
+
+#### `db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`
+
+Añade una columna en el `db.$schema` y devuelve `true`.
+
+#### `db.dropTable(table:String): Promise<Boolean>`
+
+Elimina una tabla en del `db.$schema` y devuelve `true`. Comprueba integridad referencial antes.
+
+#### `db.dropColumn(table:String, column:String): Promise<Boolean>`
+
+Elimina una columna del `db.$schema` y devuelve `true`. No necesita comprobación de integridad referencial.
+
+
 ## Tests
 
 Estos son los tests actualmente:
