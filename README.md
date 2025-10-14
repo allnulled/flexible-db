@@ -66,8 +66,8 @@ Acepta opciones mediante `options:Object` donde puedes especificar:
    - La función recibe los 3 parámetros:
       - `event:String, parameters:Array, db:Object`
    - Puedes ver el `test-of-trigger.js` para ver un ejemplo de uso
-- `onLocking:AsyncFunction` si quieres sobreescribir el método de bloqueo de persistencia por defecto.
-- `onUnlocking:AsyncFunction` si quieres sobreescribir el método de desbloqueo de persistencia por defecto.
+- `onLock:AsyncFunction` si quieres sobreescribir el método de bloqueo de persistencia por defecto.
+- `onUnlock:AsyncFunction` si quieres sobreescribir el método de desbloqueo de persistencia por defecto.
 - `lockingFile:String` si quieres sobreescribir el fichero de bloqueo de persistencia por defecto. Si no, será `process.cwd() + "/db-locker.txt"`
 - `lockingCheckInterval` si quieres sobreescribir el intervalo de espera muerta en bloqueo de persistencia. Si no, será `0`.
 
