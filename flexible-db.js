@@ -172,6 +172,9 @@
       Iterating_properties:
       for (let indexProperties = 0; indexProperties < properties.length; indexProperties++) {
         const propertyId = properties[indexProperties];
+        if(propertyId === "id") {
+          continue Iterating_properties;
+        }
         assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);
         const columnMetadata = tableMetadata[propertyId];
         if (columnMetadata.type === "boolean") {
@@ -644,6 +647,44 @@
         await this.triggerDatabase("deleteMany", [table, filter]);
         await this.persistDatabase();
         return deletedIds;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    copyObject(obj) {
+      this.trace("copyObject");
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    async modifyAll(table, modifier) {
+      this.trace("modifyAll");
+      await this.$options.onLock(this);
+      try {
+        Basic_validation: {
+          assertion(typeof table === "string", "Parameter «table» must be a string on «modifyAll»");
+          assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «modifyAll»");
+          assertion(typeof modifier === "function", "Parameter «modifier» must be a function on «modifyAll»");
+        }
+        const errorIds = [];
+        let counter = 0;
+        for (let id in this.$data[table]) {
+          counter++;
+          const originalValue = this.copyObject(this.$data[table][id]);
+          try {
+            const modifiedValue = modifier(originalValue, counter);
+            this.validateProperties(table, modifiedValue, "modifyAll");
+            this.$data[table][id] = Object.assign({}, originalValue, modifiedValue, { id: parseInt(id) });
+          } catch (error) {
+            console.log(error);
+            errorIds.push(id);
+          }
+        }
+        await this.triggerDatabase("modifyAll", [table, modifier]);
+        await this.persistDatabase();
+        return errorIds;
       } catch (error) {
         throw error;
       } finally {
