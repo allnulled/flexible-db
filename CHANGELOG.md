@@ -38,3 +38,7 @@
 ## Versión 2.0.7
 
 - Método `modifyAll(table, modifier)`
+
+## Versión 2.0.8
+
+- Actualizado README con los últimos métodos.

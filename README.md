@@ -162,6 +162,22 @@ Elimina una tabla en del `db.$schema` y devuelve `true`. Comprueba integridad re
 
 Elimina una columna del `db.$schema` y devuelve `true`. No necesita comprobación de integridad referencial.
 
+#### `db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`
+
+Aplica una función, que debe devolver las propiedades que se cambian con respecto al original, a todas las rows de la tabla especificada. La función recibe:
+
+- `it`: la row que se va a modificar.
+   - Es un objeto *copia* del original, para que si se hacen cambios, no repercuta a `db.$data[table][id]`.
+- `id`: el `id` de la row en la que se está iterando. Puede usarse para acceder al modelo real (y no solamente la copia anterior).
+
+Devuelve los `id`s donde ha saltado un error y no se ha aplicado el cambio.
+
+En caso de error, se ejecutará el `errorHandler` que por defecto es un `console.log`. Recibe:
+
+- `error`: el error.
+- `originalValue`: el valor original sin el `id`.
+- `id`: el `id` de la row que ha fallado.
+- `counter`: un contador de la iteración en la que ha fallado.
 
 ## Tests
 

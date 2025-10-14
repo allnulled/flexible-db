@@ -659,7 +659,7 @@
       return JSON.parse(JSON.stringify(obj));
     }
 
-    async modifyAll(table, modifier) {
+    async modifyAll(table, modifier, errorHandler = console.log) {
       this.trace("modifyAll");
       await this.$options.onLock(this);
       try {
@@ -678,7 +678,7 @@
             this.validateProperties(table, modifiedValue, "modifyAll");
             this.$data[table][id] = Object.assign({}, originalValue, modifiedValue, { id: parseInt(id) });
           } catch (error) {
-            console.log(error);
+            errorHandler(error, originalValue, id, counter);
             errorIds.push(id);
           }
         }
