@@ -224,7 +224,75 @@
         this.$schema = db.schema;
         await this.triggerDatabase("hydrate", [stringifiedDatabase]);
         await this.persistDatabase();
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
 
+    async renameTable(table, newName) {
+      assertion(typeof table === "string", `Parameter «table» must be a string on «renameTable»`);
+      assertion(typeof newName === "string", `Parameter «table» must be a string on «renameTable»`);
+      assertion(table !== newName, `Parameter «table» cannot be equal to parameter «newName» on «renameTable»`);
+      assertion(table in this.$schema, `Parameter «table» must be an existing table in the schema on «renameTable»`);
+      assertion(!(newName in this.$schema), `Parameter «newName» cannot an existing table in the schema on «renameTable»`);
+      await this.$options.onLock(this);
+      try {
+        Rename_in_schema: {
+          const tempData = this.$schema[table];
+          this.$schema[newName] = Object.assign({}, tempData);
+          delete this.$schema[table];
+        }
+        Rename_in_data: {
+          const tempData = this.$data[table] || {};
+          this.$data[newName] = Object.assign({}, tempData);
+          delete this.$data[table];
+        }
+        Rename_in_ids: {
+          this.$ids[newName] = this.$ids[table];
+          delete this.$ids[table];
+        }
+        await this.triggerDatabase("renameTable", [table, newName]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    async renameColumn(table, column, newName) {
+      assertion(typeof table === "string", `Parameter «table» must be a string on «renameColumn»`);
+      assertion(typeof column === "string", `Parameter «table» must be a string on «renameColumn»`);
+      assertion(typeof newName === "string", `Parameter «table» must be a string on «renameColumn»`);
+      assertion(column !== newName, `Parameter «column» cannot be equal to parameter «newName» on «renameColumn»`);
+      assertion(table in this.$schema, `Parameter «table» must be an existing table in the schema on «renameColumn»`);
+      assertion(column in this.$schema[table], `Parameter «column» must be an existing column in the schema table on «renameColumn»`);
+      assertion(!(newName in this.$schema[table]), `Parameter «newName» cannot an existing column in the schema table on «renameColumn»`);
+      await this.$options.onLock(this);
+      try {
+        Rename_in_schema: {
+          const tempData = this.$schema[table][column];
+          this.$schema[table][newName] = Object.assign({}, tempData);
+          delete this.$schema[table][column];
+        }
+        Rename_in_data: {
+          const allIds = Object.keys(this.$data[table] || {});
+          for (let indexIds = 0; indexIds < allIds.length; indexIds++) {
+            const id = allIds[indexIds];
+            const tempData = this.$data[table][id][column];
+            this.$data[table][id][newName] = tempData;
+            delete this.$data[table][id][column];
+          }
+        }
+        Rename_in_ids: {
+          // @OK.
+        }
+        await this.triggerDatabase("renameColumn", [table, column, newName]);
+        await this.persistDatabase();
+        return true;
       } catch (error) {
         throw error;
       } finally {

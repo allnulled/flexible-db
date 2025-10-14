@@ -132,6 +132,14 @@ Elimina un registro concreto y devuelve sus `true`.
 
 Elimina múltiples registros y devuelve sus `id`s en un `Array`.
 
+#### `db.renameTable(table:String, newName:String): Promise<Boolean>`
+
+Renombra una tabla a otro nombre y devuelve `true`.
+
+#### `db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`
+
+Renombra una columna a otro nombre y devuelve `true`.
+
 ## Tests
 
 Estos son los tests actualmente:

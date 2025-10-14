@@ -5,7 +5,7 @@
   "main": "flexible-db.js",
   "scripts": {
     "dev": "bash dev.sh",
-    "test": "node test.js"
+    "test": "bash test-all.sh"
   },
   "keywords": [],
   "author": "allnulled",
