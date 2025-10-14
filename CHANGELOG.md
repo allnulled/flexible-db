@@ -18,3 +18,8 @@
 
 - API asíncrona para todo
 - Soporte de semáforos con `db.$options.onLock` y `db.$options.onUnlock` de serie en node.js
+
+## Versión 2.0.4
+
+- Método `db.renameTable(table, newName)`
+- Método `db.renameColumn(table, column, newName)`
