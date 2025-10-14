@@ -467,7 +467,8 @@
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
       }
       await this.triggerDatabase("reset", [table, filter]);
-      return Object.values(this.$data[table]).filter(filter);
+      const all = this.copyObject(Object.values(this.$data[table]));
+      return all.filter(filter);
     }
 
     async insertOne(table, value) {

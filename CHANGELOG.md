@@ -42,3 +42,7 @@
 ## Versión 2.0.8
 
 - Actualizado README con los últimos métodos.
+
+## Versión 2.0.9
+
+- Ahora `selectMany` trabaja con una copia de los datos y no con ellos, por si se modifica alguno.

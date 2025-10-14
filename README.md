@@ -49,6 +49,7 @@ npm i -s @allnulled/flexible-db
    - `updateMany`
    - `deleteOne`
    - `deleteMany`
+   - `modifyAll`
 
 ## API
 
