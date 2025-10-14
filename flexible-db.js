@@ -232,6 +232,7 @@
     }
 
     async renameTable(table, newName) {
+      this.trace("renameTable");
       assertion(typeof table === "string", `Parameter «table» must be a string on «renameTable»`);
       assertion(typeof newName === "string", `Parameter «table» must be a string on «renameTable»`);
       assertion(table !== newName, `Parameter «table» cannot be equal to parameter «newName» on «renameTable»`);
@@ -264,8 +265,10 @@
     }
 
     async renameColumn(table, column, newName) {
+      this.trace("renameColumn");
       assertion(typeof table === "string", `Parameter «table» must be a string on «renameColumn»`);
-      assertion(typeof column === "string", `Parameter «table» must be a string on «renameColumn»`);
+      assertion(typeof column === "string", `Parameter «column» must be a string on «renameColumn»`);
+      assertion(column !== "id", `Parameter «column» cannot be 'id' on «renameColumn»`);
       assertion(typeof newName === "string", `Parameter «table» must be a string on «renameColumn»`);
       assertion(column !== newName, `Parameter «column» cannot be equal to parameter «newName» on «renameColumn»`);
       assertion(table in this.$schema, `Parameter «table» must be an existing table in the schema on «renameColumn»`);
@@ -300,6 +303,95 @@
       }
     }
 
+    async dropTable(table) {
+      this.trace("dropTable");
+      assertion(typeof table === "string", `Parameter «table» must be a string on «dropTable»`);
+      assertion(table in this.$schema, `Parameter «table» must be a schema table on «dropTable»`);
+      this.checkIntegrityFree(table, null);
+      await this.$options.onLock(this);
+      try {
+        delete this.$data[table];
+        delete this.$schema[table];
+        delete this.$ids[table];
+        await this.triggerDatabase("dropTable", [table]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    async dropColumn(table, column) {
+      this.trace("dropColumn");
+      assertion(typeof table === "string", `Parameter «table» must be a string on «dropColumn»`);
+      assertion(table in this.$schema, `Parameter «table» must be a schema table on «dropColumn»`);
+      assertion(typeof column === "string", `Parameter «column» must be a string on «dropColumn»`);
+      assertion(column in this.$schema[table], `Parameter «column» must be a schema column on «dropColumn»`);
+      await this.$options.onLock(this);
+      try {
+        const allIds = Object.keys(this.$data[table]);
+        for(let indexIds=0; indexIds<allIds.length; indexIds++) {
+          const id = allIds[indexIds];
+          delete this.$data[table][id][column];
+        }
+        delete this.$schema[table][column];
+        await this.triggerDatabase("dropColumn", [table]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    async addTable(table) {
+      this.trace("addTable");
+      assertion(typeof table === "string", `Parameter «table» must be a string on «addTable»`);
+      assertion(!(table in this.$schema), `Parameter «table» cannot be a schema table on «addTable»`);
+      await this.$options.onLock(this);
+      try {
+        this.$ids[table] = 0;
+        this.$data[table] = {};
+        this.$schema[table] = {};
+        await this.triggerDatabase("addTable", [table]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
+    async addColumn(table, column, metadata) {
+      this.trace("addColumn");
+      assertion(typeof table === "string", `Parameter «table» must be a string on «addColumn»`);
+      assertion(table in this.$schema, `Parameter «table» must be a schema table on «addColumn»`);
+      assertion(typeof column === "string", `Parameter «column» must be a string on «addColumn»`);
+      assertion(!(column in this.$schema[table]), `Parameter «column» cannot be a schema column on «addColumn»`);
+      assertion(typeof metadata === "object", `Parameter «metadata» must be an object on «addColumn»`);
+      assertion(typeof metadata.type === "string", `Parameter «metadata.type» must be a string on «addColumn»`);
+      assertion(this.constructor.knownTypes.indexOf(metadata.type) !== -1, `Parameter «metadata.type» must be a known type on «addColumn»`);
+      if(["object-reference", "array-reference"].indexOf(metadata.type) !== -1) {
+        assertion(typeof metadata.referredTable === "string", `Parameter «metadata.referredTable» must be a string on «addColumn»`);
+        assertion(metadata.referredTable in this.$schema, `Parameter «metadata.referredTable» must be an existing table on «addColumn»`);
+      }
+      await this.$options.onLock(this);
+      try {
+        this.$schema[table][column] = metadata;
+        await this.triggerDatabase("addColumn", [table]);
+        await this.persistDatabase();
+        return true;
+      } catch (error) {
+        throw error;
+      } finally {
+        await this.$options.onUnlock(this);
+      }
+    }
+
     async reset() {
       this.trace("reset");
       this.$ids = {};
@@ -309,7 +401,7 @@
       await this.persistDatabase();
     }
 
-    checkIntegrityFree(table, id) {
+    checkIntegrityFree(table, id = null) {
       this.trace("checkIntegrityFree");
       const tableIds = Object.keys(this.$schema);
       Iterating_tables:
@@ -334,7 +426,9 @@
             const referableRow = referableRows[indexRows];
             if (isObjectReference) {
               const referableId = referableRow[columnId];
-              if (referableId === id) {
+              if(id === null) {
+                throw new IntegrityError(`Cannot delete «${table}» because it still contains external references on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
+              } else if (referableId === id) {
                 throw new IntegrityError(`Cannot delete «${table}#${id}» because it still exists as object on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
               }
             } else if (isArrayReference) {

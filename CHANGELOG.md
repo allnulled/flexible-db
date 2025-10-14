@@ -23,3 +23,10 @@
 
 - Método `db.renameTable(table, newName)`
 - Método `db.renameColumn(table, column, newName)`
+
+## Versión 2.0.5
+
+- Método `db.addTable(table)`
+- Método `db.addColumn(table, column, metadata)`
+- Método `db.dropTable(table)`
+- Método `db.dropColumn(table, column)`

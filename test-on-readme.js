@@ -34,19 +34,33 @@ const main = async function () {
     empresas: [empresa1, empresa2],
   });
 
+  let passes1 = false;
   try {
     await flexdb.deleteOne("Empresa", empresa1);
+  } catch (error) {
+    passes1 = true;
+  }
+  if(!passes1) {
     throw new Error("Should throw integrity error (1)");
-  } catch (error) { }
+  }
+  let passes2 = false;
   try {
     await flexdb.deleteOne("Empresa", empresa2);
+  } catch (error) {
+    passes2 = true;
+  }
+  if(!passes2) {
     throw new Error("Should throw integrity error (2)");
-  } catch (error) { }
+  }
+  let passes3 = false;
   try {
     await flexdb.deleteOne("Persona", persona1);
+  } catch (error) {
+    passes3 = true;
+  }
+  if(!passes3) {
     throw new Error("Should throw integrity error (3)");
-  } catch (error) { }
-
+  }
   console.log("Completado test-on-readme.js");
 
 };

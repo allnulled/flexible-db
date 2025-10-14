@@ -110,19 +110,29 @@ const main = async function () {
   const empleado1 = await flexdb.insertOne("Empleado", { nombre: "Carlos", empresa: empresa1 });
   const empleado2 = await flexdb.insertOne("Empleado", { nombre: "David", empresa: empresa2 });
 
+  let passes1 = false;
   try {
     await flexdb.deleteOne("Empresa", empresa1);
+  } catch (error) {
+    passes1 = true;
+  }
+  if (!passes1) {
     throw new Error("Should have failed because integrity check (1)");
-  } catch (error) { }
+  }
   await flexdb.deleteOne("Empleado", empleado1);
   await flexdb.deleteOne("Empresa", empresa1);
 
   const venta1 = await flexdb.insertOne("Venta", { nombre: "Alphabet", empleados_implicados: [empleado2] });
 
+  let passes2 = false;
   try {
     await flexdb.deleteOne("Empleado", empleado2);
+  } catch (error) {
+    passes2 = true;
+  }
+  if (!passes2) {
     throw new Error("Should have failed because integrity check (2)");
-  } catch (error) { }
+  }
   await flexdb.deleteOne("Venta", venta1);
   await flexdb.deleteOne("Empleado", empleado2);
 
