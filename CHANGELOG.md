@@ -30,3 +30,7 @@
 - Método `db.addColumn(table, column, metadata)`
 - Método `db.dropTable(table)`
 - Método `db.dropColumn(table, column)`
+
+## Versión 2.0.6
+
+- Actualizado README con los últimos métodos.
