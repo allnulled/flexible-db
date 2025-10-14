@@ -1,6 +1,6 @@
 {
   "name": "@allnulled/flexible-db",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Base de datos basada en JavaScript",
   "main": "flexible-db.js",
   "scripts": {
