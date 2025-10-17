@@ -1,1 +1,1 @@
-npx nodemon -w 'flexible-db.js' -w 'test.js' -w 'test-on-readme.js' -w 'test-of-persistence.js' -w 'test-of-trigger.js' -w 'test-of-performance.js' -w 'test-of-rescheming.js' -w 'test-of-modify-all.js' -e 'js' -x 'bash test-all.sh'
+npx nodemon -w 'flexible-db.js' -w 'test.js' -w 'test-on-readme.js' -w 'test-of-persistence.js' -w 'test-of-trigger.js' -w 'test-of-performance.js' -w 'test-of-rescheming.js' -w 'test-of-modify-all.js' -w 'test-of-uniqueness.js' -e 'js' -x 'bash test-all.sh'

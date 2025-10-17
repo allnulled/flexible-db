@@ -172,31 +172,61 @@
       Iterating_properties:
       for (let indexProperties = 0; indexProperties < properties.length; indexProperties++) {
         const propertyId = properties[indexProperties];
-        if(propertyId === "id") {
+        if (propertyId === "id") {
           continue Iterating_properties;
         }
         assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);
         const columnMetadata = tableMetadata[propertyId];
-        if (columnMetadata.type === "boolean") {
-          assertion(typeof value[propertyId] === "boolean", `Property «${propertyId}» must be a boolean on «${contextId}»`);
-        } else if (columnMetadata.type === "integer") {
-          assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
-          assertion((value[propertyId] % 1) === 0, `Property «${propertyId}» must be an integer number on «${contextId}»`);
-        } else if (columnMetadata.type === "float") {
-          assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
-        } else if (columnMetadata.type === "string") {
-          assertion(typeof value[propertyId] === "string", `Property «${propertyId}» must be a string on «${contextId}»`);
-        } else if (columnMetadata.type === "object") {
-          assertion(typeof value[propertyId] === "object", `Property «${propertyId}» must be an object on «${contextId}»`);
-        } else if (columnMetadata.type === "array") {
-          assertion(Array.isArray(value[propertyId]), `Property «${propertyId}» must be an array on «${contextId}»`);
-        } else if (columnMetadata.type === "object-reference") {
-          assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
-        } else if (columnMetadata.type === "array-reference") {
-          assertion(Array.isArray(value[propertyId]), `Property «${propertyId}» must be an array on «${contextId}»`);
-          for (let indexItems = 0; indexItems < value[propertyId].length; indexItems++) {
-            const item = value[propertyId][indexItems];
-            assertion(typeof item === "number", `Property «${propertyId}» on index «${indexItems}» must be a number on «${contextId}»`);
+        Checking_validity: {
+          Checking_nullability: {
+            if (value[propertyId] !== null) {
+              break Checking_nullability;
+            }
+            if ((typeof columnMetadata.notNull === "boolean") && (columnMetadata.notNull === true)) {
+              throw new Error(`Property «${propertyId}» cannot be null on «${contextId}»`);
+            } else {
+              break Checking_validity;
+            }
+          }
+          Checking_type: {
+            if (columnMetadata.type === "boolean") {
+              assertion(typeof value[propertyId] === "boolean", `Property «${propertyId}» must be a boolean on «${contextId}»`);
+            } else if (columnMetadata.type === "integer") {
+              assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
+              assertion((value[propertyId] % 1) === 0, `Property «${propertyId}» must be an integer number on «${contextId}»`);
+            } else if (columnMetadata.type === "float") {
+              assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
+            } else if (columnMetadata.type === "string") {
+              assertion(typeof value[propertyId] === "string", `Property «${propertyId}» must be a string on «${contextId}»`);
+            } else if (columnMetadata.type === "object") {
+              assertion(typeof value[propertyId] === "object", `Property «${propertyId}» must be an object on «${contextId}»`);
+            } else if (columnMetadata.type === "array") {
+              assertion(Array.isArray(value[propertyId]), `Property «${propertyId}» must be an array on «${contextId}»`);
+            } else if (columnMetadata.type === "object-reference") {
+              assertion(typeof value[propertyId] === "number", `Property «${propertyId}» must be a number on «${contextId}»`);
+            } else if (columnMetadata.type === "array-reference") {
+              assertion(Array.isArray(value[propertyId]), `Property «${propertyId}» must be an array on «${contextId}»`);
+              for (let indexItems = 0; indexItems < value[propertyId].length; indexItems++) {
+                const item = value[propertyId][indexItems];
+                assertion(typeof item === "number", `Property «${propertyId}» on index «${indexItems}» must be a number on «${contextId}»`);
+              }
+            }
+          }
+          Checking_uniqueness: {
+            if((typeof columnMetadata.unique !== "boolean") || (columnMetadata.unique !== true)) {
+              break Checking_uniqueness;
+            }
+            const rows = Object.values(this.$data[table] || {});
+            const isUpdating = contextId.startsWith("update");
+            Iterating_rows:
+            for(let index=0; index<rows.length; index++) {
+              const row = rows[index];
+              if((row.id === value.id) && isUpdating) {
+                continue Iterating_rows;
+              }
+              const rowPropertyValue = row[propertyId];
+              assertion(value[propertyId] !== rowPropertyValue, `Property «${propertyId}» must be unique but is repeated on id «${row.id}» on «${contextId}»`);
+            }
           }
         }
       }
@@ -335,7 +365,7 @@
       await this.$options.onLock(this);
       try {
         const allIds = Object.keys(this.$data[table]);
-        for(let indexIds=0; indexIds<allIds.length; indexIds++) {
+        for (let indexIds = 0; indexIds < allIds.length; indexIds++) {
           const id = allIds[indexIds];
           delete this.$data[table][id][column];
         }
@@ -378,7 +408,7 @@
       assertion(typeof metadata === "object", `Parameter «metadata» must be an object on «addColumn»`);
       assertion(typeof metadata.type === "string", `Parameter «metadata.type» must be a string on «addColumn»`);
       assertion(this.constructor.knownTypes.indexOf(metadata.type) !== -1, `Parameter «metadata.type» must be a known type on «addColumn»`);
-      if(["object-reference", "array-reference"].indexOf(metadata.type) !== -1) {
+      if (["object-reference", "array-reference"].indexOf(metadata.type) !== -1) {
         assertion(typeof metadata.referredTable === "string", `Parameter «metadata.referredTable» must be a string on «addColumn»`);
         assertion(metadata.referredTable in this.$schema, `Parameter «metadata.referredTable» must be an existing table on «addColumn»`);
       }
@@ -429,7 +459,7 @@
             const referableRow = referableRows[indexRows];
             if (isObjectReference) {
               const referableId = referableRow[columnId];
-              if(id === null) {
+              if (id === null) {
                 throw new IntegrityError(`Cannot delete «${table}» because it still contains external references on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
               } else if (referableId === id) {
                 throw new IntegrityError(`Cannot delete «${table}#${id}» because it still exists as object on «${tableId}#${referableRow.id}.${columnId}» on «checkIntegrityFree»`);
