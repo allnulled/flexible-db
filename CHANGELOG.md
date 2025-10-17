@@ -46,3 +46,12 @@
 ## Versión 2.0.9
 
 - Ahora `selectMany` trabaja con una copia de los datos y no con ellos, por si se modifica alguno.
+
+## Versión 2.0.10
+
+- Soporte para `db.$schema[table][column].notNull = true`
+- Soporte para `db.$schema[table][column].unique = true`
+
+## Versión 2.0.11
+
+- Actualizado README con las últimas opciones de `db.$schema[*][*]`.
