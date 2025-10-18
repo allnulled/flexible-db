@@ -167,25 +167,39 @@
 
     validateProperties(table, value, contextId) {
       this.trace("validateProperties");
-      const properties = Object.keys(value);
+      const allColumns = Object.keys(this.$schema[table]);
       const tableMetadata = this.$schema[table];
-      Iterating_properties:
+      Iterating_all_columns: 
+      for(let indexColumn=0; indexColumn<allColumns.length; indexColumn++) {
+        const columnId = allColumns[indexColumn];
+        const isUndefined = typeof value[columnId] === "undefined";
+        const hasDefault = "default" in tableMetadata[columnId];
+        Parching_with_default_value_when_needed: {
+          if(isUndefined && hasDefault) {
+            value[columnId] = tableMetadata[columnId].default;
+          }
+        }
+      }
+      const properties = Object.keys(value);
+      Iterating_properties_of_value:
       for (let indexProperties = 0; indexProperties < properties.length; indexProperties++) {
         const propertyId = properties[indexProperties];
         if (propertyId === "id") {
-          continue Iterating_properties;
+          continue Iterating_properties_of_value;
         }
-        assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);
+        assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);        
         const columnMetadata = tableMetadata[propertyId];
+        const isNullable = (typeof columnMetadata.nullable === "boolean") && (columnMetadata.nullable === true);
+        const isNotNull = value[propertyId] !== null;
         Checking_validity: {
           Checking_nullability: {
-            if (value[propertyId] !== null) {
+            if (isNotNull) {
               break Checking_nullability;
             }
-            if ((typeof columnMetadata.notNull === "boolean") && (columnMetadata.notNull === true)) {
-              throw new Error(`Property «${propertyId}» cannot be null on «${contextId}»`);
-            } else {
+            if (isNullable) {
               break Checking_validity;
+            } else {
+              throw new Error(`Property «${propertyId}» cannot be null on «${contextId}»`);
             }
           }
           Checking_type: {
