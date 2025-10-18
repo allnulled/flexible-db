@@ -100,9 +100,12 @@ Se espera un objeto que:
         - con `<table>.<column>.referredTable = <una tabla conocida por schema>`
      - `"array-reference"`
         - con `<table>.<column>.referredTable = <una tabla conocida por schema>`
-  - puede contener: `<table>.<column>.notNull = true`
+  - contenga opcionalmente: `<table>.<column>.nullable = true`
      - Provocará error si ese campo se pasa como `null`
-  - puede contener: `<table>.<column>.unique = true`
+  - contenga opcionalmente: `<table>.<column>.unique = true`
+     - Provocará error si ese campo está repetido en otra row
+     - No provocará error si ese campo se pasa como `null`
+  - contenga opcionalmente: `<table>.<column>.default = ?`
      - Provocará error si ese campo está repetido en otra row
      - No provocará error si ese campo se pasa como `null`
 
