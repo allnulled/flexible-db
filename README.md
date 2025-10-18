@@ -125,7 +125,8 @@ Se espera un objeto que:
   - contenga opcionalmente: `<table>.<column>.default = ?`
      - Provocará que al llegar como `undefined` el valor, aplicará el `defaut` especificado.
      - Si el `typeof` da `function`, evaluará la función y tomará su retorno
-     - En este string se espera un `return  ~` explícito.
+     - Si el `<table>.<column>.defaultType === 'js'`, tomará `default` como código de una función en JavaScript.
+        - En este caso se espera una sentencia `"return  *";` explícita en el `default`.
 
 #### `db.dehydrate(): String`
 
