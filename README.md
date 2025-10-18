@@ -106,8 +106,7 @@ Se espera un objeto que:
      - Provocará error si ese campo está repetido en otra row
      - No provocará error si ese campo se pasa como `null`
   - contenga opcionalmente: `<table>.<column>.default = ?`
-     - Provocará error si ese campo está repetido en otra row
-     - No provocará error si ese campo se pasa como `null`
+     - Provocará que al llegar como `undefined` el valor, aplicará el `defaut` especificado.
 
 #### `db.dehydrate(): String`
 
