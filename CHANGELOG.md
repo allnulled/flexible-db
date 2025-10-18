@@ -22,6 +22,12 @@
 - Soporte para `db.$schema[table][column].default:Function`
 - Para devolver valores de código en runtime.
 
+## Versión 3.0.5
+
+- Soporte para `db.$schema[table][column].defaultType = 'js'`
+- Para devolver valores de código en runtime.
+- Pero especificando en `db.$schema[table][column].default` un código js en string.
+
 ----
 
 # Sobre la versión 2.

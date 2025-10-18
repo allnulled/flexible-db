@@ -228,6 +228,9 @@ const { table } = require("console");
           if(isUndefined && hasDefault) {
             if(typeof tableMetadata[columnId].default === "function") {
               value[columnId] = tableMetadata[columnId].default.call();
+            } else if(tableMetadata[columnId].defaultType === "js") {
+              const defaultCallback = new Function(tableMetadata[columnId].default);
+              value[columnId] = defaultCallback();
             } else {
               value[columnId] = tableMetadata[columnId].default;
             }

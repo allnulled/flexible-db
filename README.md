@@ -118,9 +118,14 @@ Se espera un objeto que:
   - contenga opcionalmente: `<table>.<column>.unique = true`
      - Provocará error si ese campo está repetido en otra row
      - No provocará error si ese campo se pasa como `null`
+  - contenga opcionalmente: `<table>.<column>.defaultType = 'js'`
+     - Provocará que el valor `defaut` especificado sirva como código fuente de una función que será:
+        - evaluada en runtime
+        - para sacar el valor `default`.
   - contenga opcionalmente: `<table>.<column>.default = ?`
      - Provocará que al llegar como `undefined` el valor, aplicará el `defaut` especificado.
      - Si el `typeof` da `function`, evaluará la función y tomará su retorno
+     - En este string se espera un `return  ~` explícito.
 
 #### `db.dehydrate(): String`
 
