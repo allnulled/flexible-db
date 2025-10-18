@@ -1,5 +1,3 @@
-const { table } = require("console");
-
 (function (factory) {
   const mod = factory();
   if (typeof window !== 'undefined') {

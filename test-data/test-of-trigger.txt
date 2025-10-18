@@ -308,3 +308,5 @@ Sat Oct 18 2025 14:51:09 GMT+0200 (hora de verano de Europa central)=setSchema:[
 Sat Oct 18 2025 14:51:09 GMT+0200 (hora de verano de Europa central)=insertOne:["Usuario",{"nombre":"Carlos"}]
 Sat Oct 18 2025 14:56:40 GMT+0200 (hora de verano de Europa central)=setSchema:[{"Usuario":{"nombre":{"type":"string"}}}]
 Sat Oct 18 2025 14:56:40 GMT+0200 (hora de verano de Europa central)=insertOne:["Usuario",{"nombre":"Carlos"}]
+Sat Oct 18 2025 19:14:09 GMT+0200 (hora de verano de Europa central)=setSchema:[{"Usuario":{"nombre":{"type":"string"}}}]
+Sat Oct 18 2025 19:14:09 GMT+0200 (hora de verano de Europa central)=insertOne:["Usuario",{"nombre":"Carlos"}]
