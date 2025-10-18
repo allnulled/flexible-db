@@ -91,6 +91,10 @@ Se espera un objeto con:
  - `<table>.<column>.(actives|passives)[*].quantity`: puede ser `1` o `N`.
  - `<table>.<column>.(actives|passives)[*].referredTable`: puede ser una tabla del `db.$schema`.
 
+En el `*` se accede a una de dos:
+ - o a la `<columnId>` en *relaciones activas*.
+ - o a la `<tableId>.<columnId>` en *relaciones pasivas*.
+
 #### `db.setSchema(schema:Object): void`
 
 El `schema` debe ser un objeto válido que represente al esquema de datos.
