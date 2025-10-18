@@ -120,6 +120,7 @@ Se espera un objeto que:
      - No provocará error si ese campo se pasa como `null`
   - contenga opcionalmente: `<table>.<column>.default = ?`
      - Provocará que al llegar como `undefined` el valor, aplicará el `defaut` especificado.
+     - Si el `typeof` da `function`, evaluará la función y tomará su retorno
 
 #### `db.dehydrate(): String`
 
