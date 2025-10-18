@@ -13,6 +13,15 @@
 
 - Soporte para `db.getRelationsSchema()`
 
+## Versión 3.0.3
+
+- Actualizado README.
+
+## Versión 3.0.4
+
+- Soporte para `db.$schema[table][column].default:Function`
+- Para devolver valores de código en runtime.
+
 ----
 
 # Sobre la versión 2.

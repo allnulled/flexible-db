@@ -226,7 +226,11 @@ const { table } = require("console");
         const hasDefault = "default" in tableMetadata[columnId];
         Parching_with_default_value_when_needed: {
           if(isUndefined && hasDefault) {
-            value[columnId] = tableMetadata[columnId].default;
+            if(typeof tableMetadata[columnId].default === "function") {
+              value[columnId] = tableMetadata[columnId].default.call();
+            } else {
+              value[columnId] = tableMetadata[columnId].default;
+            }
           }
         }
       }

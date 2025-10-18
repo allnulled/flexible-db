@@ -16,7 +16,6 @@ const main = async function () {
 
   const relations = await flexdb.getRelationsSchema();
 
-  console.log(JSON.stringify(relations, null, 2));
   FlexibleDB.assertion(typeof relations, "relations debería ser tipo object");
 
   console.log("Completado test-of-relations.js");

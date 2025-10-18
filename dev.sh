@@ -9,5 +9,6 @@ npx nodemon \
   -w 'test-of-modify-all.js' \
   -w 'test-of-uniqueness.js' \
   -w 'test-of-relations-schema.js' \
+  -w 'test-of-default.js' \
   -e 'js' \
   -x 'bash test-all.sh'
