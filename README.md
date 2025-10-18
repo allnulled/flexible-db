@@ -82,6 +82,15 @@ Acepta opciones mediante `options:Object` donde puedes especificar:
 
 Devuelve el esquema de datos, en `this.$schema`.
 
+#### `db.getRelationsSchema(): Object`
+
+Devuelve el esquema de relaciones de datos, en *runtime*, se construye al vuelo.
+
+Se espera un objeto con:
+  
+ - `<table>.<column>.(actives|passives)[*].quantity`: puede ser `1` o `N`.
+ - `<table>.<column>.(actives|passives)[*].referredTable`: puede ser una tabla del `db.$schema`.
+
 #### `db.setSchema(schema:Object): void`
 
 El `schema` debe ser un objeto válido que represente al esquema de datos.

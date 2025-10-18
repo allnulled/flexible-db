@@ -6,4 +6,5 @@ node test-of-renaming.js
 node test-of-rescheming.js
 node test-of-modify-all.js
 node test-of-uniqueness.js
+node test-of-relations-schema.js
 # node test-of-performance.js

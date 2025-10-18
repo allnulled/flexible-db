@@ -1,3 +1,5 @@
+const { table } = require("console");
+
 (function (factory) {
   const mod = factory();
   if (typeof window !== 'undefined') {
@@ -161,8 +163,56 @@
 
     async getSchema() {
       this.trace("getSchema");
-      await this.triggerDatabase("getSchema", [schema]);
+      await this.triggerDatabase("getSchema", []);
       return this.$schema;
+    }
+
+    async getRelationsSchema() {
+      await this.triggerDatabase("getRelationsSchema", []);
+      const relations = {};
+      const tableIds = Object.keys(this.$schema);
+      Iterating_tables_first:
+      for(let indexTable=0; indexTable<tableIds.length; indexTable++) {
+        const tableId = tableIds[indexTable];
+        const tableMetadata = this.$schema[tableId];
+        relations[tableId] = {
+          active: {},
+          passive: {},
+        };
+        const columnIds = Object.keys(tableMetadata);
+        Iterating_columns_for_actives:
+        for(let indexColumn=0; indexColumn<columnIds.length; indexColumn++) {
+          const columnId = columnIds[indexColumn];
+          const columnMetadata = this.$schema[tableId][columnId];
+          const quantity = columnMetadata.type === "array-reference" ? "N" : columnMetadata.type === "object-reference" ? "1" : undefined;
+          if(typeof quantity === "undefined") {
+            continue Iterating_columns_for_actives;
+          }
+          relations[tableId].active[columnId] = {
+            quantity,
+            referredTable: columnMetadata.referredTable,
+          };
+        }
+        Iterating_tables_again_for_passives:
+        for(let indexTable2=0; indexTable2<tableIds.length; indexTable2++) {
+          const tableId2 = tableIds[indexTable2];
+          const columnIds2 = Object.keys(this.$schema[tableId2]);
+          Iterating_columns_again_for_passives:
+          for(let indexColumn2=0; indexColumn2<columnIds2.length; indexColumn2++) {
+            const columnId2 = columnIds2[indexColumn2];
+            const columnMetadata2 = this.$schema[tableId2][columnId2];
+            const quantity = columnMetadata2.type === "array-reference" ? "N" : columnMetadata2.type === "object-reference" ? "1" : undefined;
+            if(typeof quantity === "undefined") {
+              continue Iterating_columns_again_for_passives;
+            }
+            relations[tableId].passive[tableId2 + "." + columnId2] = {
+              quantity,
+              referredTable: columnMetadata2.referredTable,
+            };
+          }
+        }
+      }
+      return relations;
     }
 
     validateProperties(table, value, contextId) {
