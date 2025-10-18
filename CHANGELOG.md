@@ -2,19 +2,16 @@
 
 # Sobre la versión 2.
 
-## Versión 3.0.0
+## Versión 3.0.1
 
 - Actualizado README con las últimas opciones de:
    - `db.$schema[*][*].unique`.
    - `db.$schema[*][*].nullable`.
    - `db.$schema[*][*].default`.
 
-## Versión 1.0.3
+## Versión 3.0.2
 
-- Soporte para persistencia:
-   - Método `db.persist()`
-   - Opción de `db.$options.onPersist` para soportar persistencia automática
-   - Test de persistencia en `test-of-persistence.js`
+- Soporte para `db.getRelationsSchema()`
 
 ----
 
