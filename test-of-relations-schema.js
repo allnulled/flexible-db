@@ -28,8 +28,6 @@ const main = async function () {
 
   const relations = await flexdb.getRelationsSchema();
 
-  console.log(JSON.stringify(relations, null, 2));
-
   FlexibleDB.assertion(typeof relations === "object", "relations debería ser tipo object");
   FlexibleDB.assertion(typeof relations.Objeto.active === "object", "relations.Objeto.active debería ser tipo object");
   FlexibleDB.assertion(typeof relations.Objeto.passive["Usuario.referencia"] === "object", "relations.Objeto.passive['Usuario.referencia'] debería ser tipo object");
