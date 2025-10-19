@@ -203,6 +203,10 @@
             if(typeof quantity === "undefined") {
               continue Iterating_columns_again_for_passives;
             }
+            const refersToSelf = columnMetadata2.referredTable === tableId;
+            if(!refersToSelf) {
+              continue Iterating_columns_again_for_passives;
+            }
             relations[tableId].passive[tableId2 + "." + columnId2] = {
               quantity,
               referredTable: columnMetadata2.referredTable,
