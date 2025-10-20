@@ -170,7 +170,7 @@
       const relations = {};
       const tableIds = Object.keys(this.$schema);
       Iterating_tables_first:
-      for(let indexTable=0; indexTable<tableIds.length; indexTable++) {
+      for (let indexTable = 0; indexTable < tableIds.length; indexTable++) {
         const tableId = tableIds[indexTable];
         const tableMetadata = this.$schema[tableId];
         relations[tableId] = {
@@ -179,32 +179,32 @@
         };
         const columnIds = Object.keys(tableMetadata);
         Iterating_columns_for_actives:
-        for(let indexColumn=0; indexColumn<columnIds.length; indexColumn++) {
+        for (let indexColumn = 0; indexColumn < columnIds.length; indexColumn++) {
           const columnId = columnIds[indexColumn];
           const columnMetadata = this.$schema[tableId][columnId];
           const quantity = columnMetadata.type === "array-reference" ? "N" : columnMetadata.type === "object-reference" ? "1" : undefined;
-          if(typeof quantity === "undefined") {
+          if (typeof quantity === "undefined") {
             continue Iterating_columns_for_actives;
           }
-          relations[tableId].active[columnId] = {
+          relations[tableId].active[tableId + "." + columnId] = {
             quantity,
             referredTable: columnMetadata.referredTable,
           };
         }
         Iterating_tables_again_for_passives:
-        for(let indexTable2=0; indexTable2<tableIds.length; indexTable2++) {
+        for (let indexTable2 = 0; indexTable2 < tableIds.length; indexTable2++) {
           const tableId2 = tableIds[indexTable2];
           const columnIds2 = Object.keys(this.$schema[tableId2]);
           Iterating_columns_again_for_passives:
-          for(let indexColumn2=0; indexColumn2<columnIds2.length; indexColumn2++) {
+          for (let indexColumn2 = 0; indexColumn2 < columnIds2.length; indexColumn2++) {
             const columnId2 = columnIds2[indexColumn2];
             const columnMetadata2 = this.$schema[tableId2][columnId2];
             const quantity = columnMetadata2.type === "array-reference" ? "N" : columnMetadata2.type === "object-reference" ? "1" : undefined;
-            if(typeof quantity === "undefined") {
+            if (typeof quantity === "undefined") {
               continue Iterating_columns_again_for_passives;
             }
             const refersToSelf = columnMetadata2.referredTable === tableId;
-            if(!refersToSelf) {
+            if (!refersToSelf) {
               continue Iterating_columns_again_for_passives;
             }
             relations[tableId].passive[tableId2 + "." + columnId2] = {
@@ -221,16 +221,16 @@
       this.trace("validateProperties");
       const allColumns = Object.keys(this.$schema[table]);
       const tableMetadata = this.$schema[table];
-      Iterating_all_columns: 
-      for(let indexColumn=0; indexColumn<allColumns.length; indexColumn++) {
+      Iterating_all_columns:
+      for (let indexColumn = 0; indexColumn < allColumns.length; indexColumn++) {
         const columnId = allColumns[indexColumn];
         const isUndefined = typeof value[columnId] === "undefined";
         const hasDefault = "default" in tableMetadata[columnId];
         Parching_with_default_value_when_needed: {
-          if(isUndefined && hasDefault) {
-            if(typeof tableMetadata[columnId].default === "function") {
+          if (isUndefined && hasDefault) {
+            if (typeof tableMetadata[columnId].default === "function") {
               value[columnId] = tableMetadata[columnId].default.call();
-            } else if(tableMetadata[columnId].defaultType === "js") {
+            } else if (tableMetadata[columnId].defaultType === "js") {
               const defaultCallback = new Function(tableMetadata[columnId].default);
               value[columnId] = defaultCallback();
             } else {
@@ -246,7 +246,7 @@
         if (propertyId === "id") {
           continue Iterating_properties_of_value;
         }
-        assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);        
+        assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);
         const columnMetadata = tableMetadata[propertyId];
         const isNullable = (typeof columnMetadata.nullable === "boolean") && (columnMetadata.nullable === true);
         const isNotNull = value[propertyId] !== null;
@@ -286,15 +286,15 @@
             }
           }
           Checking_uniqueness: {
-            if((typeof columnMetadata.unique !== "boolean") || (columnMetadata.unique !== true)) {
+            if ((typeof columnMetadata.unique !== "boolean") || (columnMetadata.unique !== true)) {
               break Checking_uniqueness;
             }
             const rows = Object.values(this.$data[table] || {});
             const isUpdating = contextId.startsWith("update");
             Iterating_rows:
-            for(let index=0; index<rows.length; index++) {
+            for (let index = 0; index < rows.length; index++) {
               const row = rows[index];
-              if((row.id === value.id) && isUpdating) {
+              if ((row.id === value.id) && isUpdating) {
                 continue Iterating_rows;
               }
               const rowPropertyValue = row[propertyId];
@@ -562,16 +562,42 @@
 
   const FlexibleDBCrudLayer = class extends FlexibleDBBasicLayer {
 
-    async selectMany(table, filter = SELECT_ALL_FILTER) {
+    async selectOne(table, id, withTableType = false) {
+      this.trace("selectOne");
+      Basic_validation: {
+        assertion(typeof table === "string", "Parameter «table» must be a string on «selectOne»");
+        assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectOne»");
+        assertion(["string", "number"].indexOf(typeof id), "Parameter «id» must be a string on «selectOne»");
+      }
+      await this.triggerDatabase("selectOne", [table, id]);
+      assertion(id in this.$data[table], `No row found by «id=${id}» on «selectOne»`);
+      const row = this.copyObject(this.$data[table][id]);
+      if(withTableType) {
+        row.type = table;
+      }
+      return row;
+    }
+
+    async selectMany(table, filter = SELECT_ALL_FILTER, expandSpec = false, withTableType = false) {
       this.trace("selectMany");
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «selectMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
       }
-      await this.triggerDatabase("reset", [table, filter]);
+      await this.triggerDatabase("selectMany", [table, filter]);
       const all = this.copyObject(Object.values(this.$data[table]));
-      return all.filter(filter);
+      if(withTableType) {
+        for(let indexRow=0; indexRow<all.length; indexRow++) {
+          const row = all[indexRow];
+          row.type = table;
+        }
+      }
+      const filtered = all.filter(filter);
+      if(expandSpec) {
+        return this.expandRecords(table, filtered, expandSpec);
+      }
+      return filtered;
     }
 
     async insertOne(table, value) {
@@ -795,6 +821,55 @@
         await this.$options.onUnlock(this);
       }
     }
+
+    async expandRecords(tableName, records, expandSpec) {
+      const tableSchema = this.$schema[tableName];
+      const expandedRecords = [];
+      Iterating_records:
+      for (const record of records) {
+        const expanded = { ...record };
+        Iterating_expanders:
+        for (const field in expandSpec) {
+          const def = tableSchema[field];
+          if (!def) {
+            continue Iterating_expanders;
+          }
+          const subExpand = expandSpec[field]; // puede ser true o un objeto o array
+          Depending_on_type:
+          if (def.type === "object-reference") {
+            const refTable = def.referredTable;
+            const id = record[field];
+            if (id != null) {
+              const ref = await this.selectOne(refTable, id, true);
+              if (ref) {
+                const isExpandedByField = (subExpand && (subExpand !== true));
+                expanded[field] = isExpandedByField ? (await this.expandRecords(refTable, [ref], this.normalizeExpandSpec(subExpand)))[0] : ref;
+              }
+            }
+          } else if (def.type === "array-reference") {
+            const refTable = def.referredTable;
+            const ids = Array.isArray(record[field]) ? record[field] : [];
+            const refs = await this.selectMany(refTable, r => ids.includes(r.id), true);
+            const isExpandedByField = (subExpand && (subExpand !== true));
+            expanded[field] = isExpandedByField ? await this.expandRecords(refTable, refs, this.normalizeExpandSpec(subExpand)) : refs;
+          }
+        }
+        expandedRecords.push(expanded);
+      }
+      return expandedRecords;
+    }
+
+    // Permite usar arrays como ["persona"] o objetos { persona: true }
+    normalizeExpandSpec(spec) {
+      if (spec === true) return {};
+      if (Array.isArray(spec)) {
+        const obj = {};
+        for (const k of spec) obj[k] = true;
+        return obj;
+      }
+      return spec;
+    }
+
 
   }
 

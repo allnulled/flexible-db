@@ -92,8 +92,8 @@ Se espera un objeto con:
  - `<table>.<column>.(actives|passives)[*].referredTable`: puede ser una tabla del `db.$schema`.
 
 En el `*` se accede a una de dos:
- - o a la `<columnId>` en *relaciones activas*.
- - o a la `<tableId>.<columnId>` en *relaciones pasivas*.
+ - o a la `<tableId><columnId>` en *relaciones activas*.
+ - o a la `<referredTable>.<columnId>` en *relaciones pasivas*.
 
 #### `db.setSchema(schema:Object): void`
 
@@ -138,9 +138,33 @@ Sobreescribe los `$ids`, `$data` y `$schema` de la base de datos con el `stringi
 
 En `stringifiedDatabase` se espera un `String` como el que devuelve `db.dehydrate()`.
 
-#### `db.selectMany(table:String, filter:Function): Promise<Array>`
+#### `db.selectMany(table:String, filter:Function = SELECT_ALL_FILTER, expandSpec:Object = {}, withTableType:Boolean = false): Promise<Array>`
 
 Devuelve un `Array` con los registros donde la función `filter` ha devuelto `true`.
+
+Con `expandSpec` puedes pasar un `Object` con más `Object`s dentro para ir expandiendo los tipos. Ejemplo:
+
+```js
+db.selectMany("Grupo", () => true, {
+  usuarios: {
+    persona: {
+      pais: true
+    }
+  },
+  permisos: true,
+});
+```
+
+Esto expandirá:
+
+- `Grupo.usuarios` » `Usuario.persona` » `Persona.pais`
+- `Grupo.permisos`
+
+De esta forma, puedes expandir fácilmente los tipos de forma recursiva.
+
+#### `db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`
+
+Devuelve un `Object` con el registro que tiene el `id` especificado o lanza error.
 
 #### `db.insertOne(table:String, value:Object): Promise<Integer>`
 
