@@ -162,9 +162,13 @@ Esto expandirá:
 
 De esta forma, puedes expandir fácilmente los tipos de forma recursiva.
 
+El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en las rows.
+
 #### `db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`
 
 Devuelve un `Object` con el registro que tiene el `id` especificado o lanza error.
+
+El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en la row.
 
 #### `db.insertOne(table:String, value:Object): Promise<Integer>`
 

@@ -28,6 +28,11 @@
 - Para devolver valores de código en runtime.
 - Pero especificando en `db.$schema[table][column].default` un código js en string.
 
+## Versión 3.0.11
+
+- Soporte para `db.selectOne(table, id)`
+- Soporte para `db.selectMany(table, filter, expandSpec)`
+
 ----
 
 # Sobre la versión 2.
