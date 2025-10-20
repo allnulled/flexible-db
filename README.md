@@ -50,6 +50,8 @@ npm i -s @allnulled/flexible-db
    - `deleteOne`
    - `deleteMany`
    - `modifyAll`
+   - `expandRecords`
+   - `attachRecords`
 
 ## API
 
@@ -235,17 +237,59 @@ En caso de error, se ejecutará el `errorHandler` que por defecto es un `console
 - `id`: el `id` de la row que ha fallado.
 - `counter`: un contador de la iteración en la que ha fallado.
 
+#### `db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`
+
+Sirve para adjuntar datos de esta tabla que se refieren a otras tablas, de forma recursiva.
+
+- El parámetro `sourceTable` se refiere a la `db.$schema[sourceTable]` correspondiente al `dataset`.
+- El parámetro `dataset` se refiere al conjunto de datos en sí.
+- El parámetro `expandSpec` cumple con la función de *saber qué campos se tienen que expandir* solamente, y lo consigue:
+   - Al poner un objeto con la clave `persona` entiendes que en `db.$schema[sourceTable].persona` hay una `array-reference` o `object-reference`.
+   - Al poner otro objeto bajo `persona` en lugar de un simple `true`, añades que `persona` tiene otros tipos que queremos expandir.
+   - De esta forma puedes recursivamente, por ejemplo:
+
+```js
+db.expandRecords("Usuario", dataset, { persona: { pais: true } });
+```
+
+Con este simple ejemplo, arrastramos `Usuario.persona` » `Persona.pais` » `Pais.*` automáticamente.
+
+En este ejemplo estamos suponiendo un `schema` al uso.
+
+Pero puedes ver los tests en [`test-of-complex-query.js`](https://github.com/allnulled/flexible-db/blob/main/test-of-complex-query.js).
+
+
+#### `db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
+
+Sirve para adjuntar datos de otras tablas que se refieren al tipo de esta tabla, sea como `array-reference` o como `object-reference`.
+
+Amplía el `dataset` con una columna `newColumn` con todos los matches referidos en `db.$schema[referredTable][referredColumn]` del `dataset`.
+
+Requiere de relaciones `array-reference` o `object-reference`, concretamente que `db.$schema[sourceTable]` sea la `referredTable` de `db.$schema[referredTable][referredColumn]`.
+
+- El parámetro `sourceTable` indica el tipo de `db.$schema` que se considera a `dataset`.
+- El parámetro `newColumn` indica la nueva columna para `dataset` que se va a utilizar para adjuntar los datos.
+- El parámetro `referredTable` indica la tabla del `db.$schema` que contiene una columna que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
+- El parámetro `referredColumn` indica la columna de `db.$schema[referredTable]` que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
+
+
 ## Tests
 
 Estos son los tests actualmente:
 
-- [Test general](https://github.com/allnulled/flexible-db/blob/main/test.js)
-- [Test del README](https://github.com/allnulled/flexible-db/blob/main/test-on-readme.js)
-- [Test de persistencia](https://github.com/allnulled/flexible-db/blob/main/test-of-persistence.js)
-- [Test de trigger](https://github.com/allnulled/flexible-db/blob/main/test-of-trigger.js)
-- [Test de performance](https://github.com/allnulled/flexible-db/blob/main/test-of-performance.js)
+- [test-on-readme.js](https://github.com/allnulled/flexible-db/blob/main/test-on-readme.js)
+- [test-of-persistence.js](https://github.com/allnulled/flexible-db/blob/main/test-of-persistence.js)
+- [test-of-triggers.js](https://github.com/allnulled/flexible-db/blob/main/test-of-triggers.js)
+- [test-of-renaming.js](https://github.com/allnulled/flexible-db/blob/main/test-of-renaming.js)
+- [test-of-rescheming.js](https://github.com/allnulled/flexible-db/blob/main/test-of-rescheming.js)
+- [test-of-modify-all.js](https://github.com/allnulled/flexible-db/blob/main/test-of-modify-all.js)
+- [test-of-uniqueness.js](https://github.com/allnulled/flexible-db/blob/main/test-of-uniqueness.js)
+- [test-of-relations.js](https://github.com/allnulled/flexible-db/blob/main/test-of-relations.js)
+- [test-of-complex-query.js](https://github.com/allnulled/flexible-db/blob/main/test-of-complex-query.js)
+- [test-of-default.js](https://github.com/allnulled/flexible-db/blob/main/test-of-default.js)
 
-## Ejemplo
+
+## Ejemplo práctico
 
 
 

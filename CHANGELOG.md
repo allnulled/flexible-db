@@ -33,6 +33,11 @@
 - Soporte para `db.selectOne(table, id)`
 - Soporte para `db.selectMany(table, filter, expandSpec)`
 
+## Versión 3.0.12
+
+- Soporte para `db.expandRecords(table, dataset, expandSpec)`
+- Soporte para `db.attachRecords(table, column, referredTable, referredColumn, dataset)`
+
 ----
 
 # Sobre la versión 2.

@@ -586,11 +586,12 @@
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
       }
       await this.triggerDatabase("selectMany", [table, filter]);
-      const all = this.copyObject(Object.values(this.$data[table]));
-      if(withTableType) {
+      const all = this.copyObject(Object.values(this.$data[table] || {}));
+      if(withTableType !== false) {
+        const key = typeof withTableType === "string" ? withTableType : "type";
         for(let indexRow=0; indexRow<all.length; indexRow++) {
           const row = all[indexRow];
-          row.type = table;
+          row[key] = table;
         }
       }
       const filtered = all.filter(filter);
@@ -823,11 +824,12 @@
     }
 
     async expandRecords(tableName, records, expandSpec) {
+      this.trace("expandRecords");
       const tableSchema = this.$schema[tableName];
       const expandedRecords = [];
       Iterating_records:
       for (const record of records) {
-        const expanded = { ...record };
+        const expanded = record;
         Iterating_expanders:
         for (const field in expandSpec) {
           const def = tableSchema[field];
@@ -840,7 +842,7 @@
             const refTable = def.referredTable;
             const id = record[field];
             if (id != null) {
-              const ref = await this.selectOne(refTable, id, true);
+              const ref = await this.selectOne(refTable, id);
               if (ref) {
                 const isExpandedByField = (subExpand && (subExpand !== true));
                 expanded[field] = isExpandedByField ? (await this.expandRecords(refTable, [ref], this.normalizeExpandSpec(subExpand)))[0] : ref;
@@ -861,6 +863,7 @@
 
     // Permite usar arrays como ["persona"] o objetos { persona: true }
     normalizeExpandSpec(spec) {
+      this.trace("normalizeExpandSpec");
       if (spec === true) return {};
       if (Array.isArray(spec)) {
         const obj = {};
@@ -870,6 +873,29 @@
       return spec;
     }
 
+    async attachRecords(sourceTable, newColumn, referredTable, referredColumn, records) {
+      this.trace("attachRecords");
+      assertion(sourceTable in this.$schema, `Parameter «sourceTable» must be a table in schema on «attachRecords»`);
+      assertion(!(newColumn in this.$schema[sourceTable]), `Parameter «newColumn» cannot be a column of table «${sourceTable}» in schema on «attachRecords»`);
+      assertion(referredTable in this.$schema, `Parameter «referredTable» must be a table in schema on «attachRecords»`);
+      assertion(referredColumn in this.$schema[referredTable], `Parameter «referredColumn» must be a column of table «${referredTable}» in schema on «attachRecords»`);
+      assertion(["array-reference", "object-reference"].indexOf(this.$schema[referredTable][referredColumn].type) !== -1, `Parameter «referredColumn» must point to a column of table «${referredTable}» that has a strict relation having as «type» one of «array-reference» or «object-reference» in schema on «attachRecords»`);
+      assertion(this.$schema[referredTable][referredColumn].referredTable === sourceTable, `Parameter «referredColumn» must point to a column of table «${referredTable}» that has a strict relation contract having as «referredTable» only «${sourceTable}» in schema on «attachRecords»`);
+      const isArray = this.$schema[referredTable][referredColumn].type === "array-reference";
+      const isObject = this.$schema[referredTable][referredColumn].type === "object-reference";
+      const attachedRecords = [];
+      for(let indexRecord=0; indexRecord<records.length; indexRecord++) {
+        const record = records[indexRecord];
+        const filter = isArray ? function(line) {
+          return line[referredColumn].indexOf(record.id) !== -1; 
+        } : function(line) {
+          return line[referredColumn] === record.id;
+        };
+        const matchedReferences = await this.selectMany(referredTable, filter);
+        records[indexRecord][newColumn] = matchedReferences;
+      }
+      return attachedRecords;
+    }
 
   }
 
