@@ -38,6 +38,11 @@
 - Soporte para `db.expandRecords(table, dataset, expandSpec)`
 - Soporte para `db.attachRecords(table, column, referredTable, referredColumn, dataset)`
 
+## Versión 3.0.14
+
+- Soporte para `db.proxifyDatabaset(dataset, table)`
+- Soporte para interfaz de `FlexibleDB.DatasetProxy`
+
 ----
 
 # Sobre la versión 2.
