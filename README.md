@@ -275,35 +275,35 @@ Requiere de relaciones `array-reference` o `object-reference`, concretamente que
 
 #### `proxy = db.proxifyDataset(dataset:Array, table:String = null)`
 
-Crea una instancia de `new FlexibleDB.DatasetProxy(database, table, db)` sobreentendiendo la `db` propia.
+Crea una instancia de `new FlexibleDB.DatasetProxy(dataset, table, db)` sobreentendiendo la `db` propia.
 
 A continuación se expone la interfaz de `FlexibleDB.DatasetProxy` mediante la instancia `proxy`.
 
-#### `proxy.$dataset`
+#### `proxy.$dataset:Array`
 
 El `dataset` sobre el que se está iterando.
 
-#### `proxy.$database`
+#### `proxy.$database:Object`
 
 La `database` que se está usando para tipos.
 
-#### `proxy.$table`
+#### `proxy.$table:String`
 
 La `table` que se sobreentiende como tipo del `dataset`.
 
-#### `proxy.findBySelector(selectorList = []):DatasetProxy`
+#### `proxy.findBySelector(selectorList:Array = []):DatasetProxy`
 
 Permite cambiar el dataset con una subselección interna y encadenar otros métodos.
 
-#### `proxy.setDataset(dataset):DatasetProxy`
+#### `proxy.setDataset(dataset:Array):DatasetProxy`
 
 Permite cambiar el dataset y encadenar otros métodos.
 
-#### `proxy.setTable(table):DatasetProxy`
+#### `proxy.setTable(table:String):DatasetProxy`
 
 Permite cambiar la tabla del dataset y encadenar otros métodos.
 
-#### `proxy.setDatabase(database):DatasetProxy`
+#### `proxy.setDatabase(database:Object):DatasetProxy`
 
 Permite cambiar la base de datos del dataset y encadenar otros métodos.
 
@@ -325,31 +325,39 @@ Es útil para iterar datos de un subset o al menos una copia diferente de proxy.
 
 Permite desduplicar un conjunto de datos. Utiliza el `row.id` y si no lo encuentra, el `row` directamente.
 
-#### `async proxy.filter(callback):Promise<DatasetProxy>`
+#### `async proxy.filter(callback:Function):Promise<DatasetProxy>`
 
 Permite hacer `filter` asíncronamente para operar sobre el dataset.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.map(callback):Promise<DatasetProxy>`
+La firma contractual de la función es la típica de `Array.prototype.filter`.
+
+#### `async proxy.map(callback:Function):Promise<DatasetProxy>`
 
 Permite hacer `map` asíncronamente para operar sobre el dataset.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.reduce(callback, original = []):Promise<DatasetProxy>`
+La firma contractual de la función es la típica de `Array.prototype.map`.
+
+#### `async proxy.reduce(callback:Function, original:any = []):Promise<DatasetProxy>`
 
 Permite hacer `reduce` asíncronamente para operar sobre el dataset.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.each(callback, original = []):Promise<DatasetProxy>`
+La firma contractual de la función es la típica de `Array.prototype.reduce`.
+
+#### `async proxy.each(callback:Function):Promise<DatasetProxy>`
 
 Permite hacer `each` asíncronamente para operar sobre el dataset.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.expandRecords(sourceTable, expandSpec = {}):Promise<DatasetProxy>`
+La firma contractual de la función es la típica de `Array.prototype.each`.
+
+#### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<DatasetProxy>`
 
 Permite expandir registros del dataset con la database.
 
@@ -357,7 +365,7 @@ Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(...contract)
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.attachRecords(sourceTable, newColumn, referredTable, referredColumn):Promise<DatasetProxy>`
+#### `async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<DatasetProxy>`
 
 Permite adjuntar registros del dataset con la database.
 
@@ -380,6 +388,7 @@ Estos son los tests actualmente:
 - [test-of-uniqueness.js](https://github.com/allnulled/flexible-db/blob/main/test-of-uniqueness.js)
 - [test-of-relations.js](https://github.com/allnulled/flexible-db/blob/main/test-of-relations.js)
 - [test-of-complex-query.js](https://github.com/allnulled/flexible-db/blob/main/test-of-complex-query.js)
+- [test-of-dataset-proxy.js](https://github.com/allnulled/flexible-db/blob/main/test-of-dataset-proxy.js)
 - [test-of-default.js](https://github.com/allnulled/flexible-db/blob/main/test-of-default.js)
 
 

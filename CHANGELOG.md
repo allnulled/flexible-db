@@ -1,6 +1,6 @@
 # CHANGELOG
 
-# Sobre la versión 2.
+# Sobre la versión 3.
 
 ## Versión 3.0.1
 
