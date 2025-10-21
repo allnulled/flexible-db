@@ -578,8 +578,82 @@
       return row;
     }
 
-    async selectMany(table, filter = SELECT_ALL_FILTER, expandSpec = false, withTableType = false) {
+    transformFilterByUser(filterByUser) {
+      if(!Array.isArray(filterByUser)) {
+        return filterByUser;
+      }
+      if(!filterByUser.length) {
+        return () => true;
+      }
+      return function(row) {
+        let isValid = true;
+        for(let index=0; index<filterByUser.length; index++) {
+          const filterRule = filterByUser[index];
+          assertion(Array.isArray(filterRule), `Parameter «filterByUser» on index «${index}» must be an array on «transformFilterByUser»`)
+          const [ column, op, target, targetType = "string"] = filterRule;
+          switch(op) {
+            case "=": {
+              isValid = isValid && row[column] === target;
+              break;
+            }
+            case "!=": {
+              isValid = isValid && (row[column] !== target);
+              break;
+            }
+            case "<": {
+              isValid = isValid && (row[column] < target);
+              break;
+            }
+            case ">": {
+              isValid = isValid && (row[column] > target);
+              break;
+            }
+            case "<=": {
+              isValid = isValid && (row[column] <= target);
+              break;
+            }
+            case ">=": {
+              isValid = isValid && (row[column] >= target);
+              break;
+            }
+            case "is null": {
+              isValid = isValid && (row[column] === null);
+              break;
+            }
+            case "is not null": {
+              isValid = isValid && (row[column] !== null);
+              break;
+            }
+            case "is in": {
+              isValid = isValid && (target.indexOf(row[column]) !== -1);
+              break;
+            }
+            case "is not in": {
+              isValid = isValid && (target.indexOf(row[column]) === -1);
+              break;
+            }
+            case "has": {
+              isValid = isValid && (row[column].indexOf(target) !== -1);
+              break;
+            }
+            case "has not": {
+              isValid = isValid && (row[column].indexOf(target) === -1);
+              break;
+            }
+            default:
+              throw new Error(`Logical operator not found «${op}» on «transformFilterByUser»`);
+          }
+          if(!isValid) {
+            return false;
+          }
+        }
+        return true;
+      };
+    }
+
+    async selectMany(table, filterByUser = SELECT_ALL_FILTER, expandSpec = false, withTableType = false) {
       this.trace("selectMany");
+      const filter = this.transformFilterByUser(filterByUser);
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «selectMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
@@ -1084,7 +1158,135 @@
 
   };
 
-  const FlexibleDB = class extends FlexibleDBProxiesLayer {
+  const FlexibleDBServersLayer = class extends FlexibleDBProxiesLayer {
+
+    static BasicServer = class {
+
+      static from (...args) {
+        return new this(...args);
+      }
+
+      constructor(port, database) {
+        this.$port = port;
+        this.$database = database;
+        this.$app = null;
+        this.$server = null;
+      }
+
+      async operation(opcode, args = []) {
+        let output = null;
+        switch(opcode) {
+          case "selectOne": {
+            output = await this.$database.selectOne(...args);
+            break;
+          }
+          case "selectMany": {
+            output = await this.$database.selectMany(...args);
+            break;
+          }
+          case "insertOne": {
+            output = await this.$database.insertOne(...args);
+            break;
+          }
+          case "insertMany": {
+            output = await this.$database.insertMany(...args);
+            break;
+          }
+          case "updateOne": {
+            output = await this.$database.updateOne(...args);
+            break;
+          }
+          case "updateMany": {
+            output = await this.$database.updateMany(...args);
+            break;
+          }
+          case "deleteOne": {
+            output = await this.$database.deleteOne(...args);
+            break;
+          }
+          case "deleteMany": {
+            output = await this.$database.deleteMany(...args);
+            break;
+          }
+          default: {
+            throw new Error(`Parameter «opcode» must be a known opcode on «BasicServer.operation»`);
+          }
+        }
+        return output;
+      }
+
+      async start(port = this.$port) {
+        if(typeof global !== "undefined") {
+          const express = require("express");
+          this.$app = express();
+          this.$server = require("http").createServer(this.$app);
+          const bodyParser = require("body-parser");
+          this.$app.use(bodyParser.json());
+          this.$app.use(async (request, response) => {
+            let opcode = "unknown";
+            try {
+              opcode = (request.body || {}).opcode;
+              const result = await this.operation(opcode, request.body?.parameters);
+              return response.json({
+                opcode: opcode,
+                status: 200,
+                message: "Success",
+                parameters: {
+                  headers: request.headers,
+                  query: request.query,
+                  body: request.body,
+                },
+                result: result || null,
+                error: false,
+              });
+            } catch (error) {
+              console.log(error);
+              return response.json({
+                opcode: opcode,
+                status: 500,
+                message: "Bad request",
+                parameters: {
+                  headers: request.headers,
+                  query: request.query,
+                  body: request.body,
+                },
+                result: null,
+                error: {
+                  name: error.name,
+                  message: error.message,
+                },
+              });
+            }
+          });
+          await new Promise((resolve, reject) => {
+            this.$server.listen(port, function() {
+              resolve();
+            });
+          });
+        }
+        return this;
+      }
+
+      clone() {
+        return this.constructor.from(this.$port, this.$database);
+      }
+
+      stop() {
+        if(this.$server) {
+          this.$server.close();
+        }
+        return this;
+      }
+
+    }
+
+    createServer(port) {
+      return this.constructor.BasicServer.from(port, this);
+    }
+
+  };
+
+  const FlexibleDB = class extends FlexibleDBServersLayer {
 
   };
 

@@ -12,5 +12,6 @@ npx nodemon \
   -w 'test-of-default.js' \
   -w 'test-of-complex-query.js' \
   -w 'test-of-dataset-proxy.js' \
+  -w 'test-of-server.js' \
   -e 'js' \
   -x 'bash test-all.sh'

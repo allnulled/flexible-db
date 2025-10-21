@@ -30,28 +30,49 @@ npm i -s @allnulled/flexible-db
    - `"object-reference"` (con integridad referencial)
    - `"array-reference"` (con integridad referencial)
 - Soporta métodos de esquema:
-   - `getSchema`
-   - `setSchema`
-   - `renameTable`
-   - `renameColumn`
-   - `dropTable`
-   - `dropColumn`
-   - `addTable`
-   - `addColumn`
+   - `await db.getSchema`
+   - `await db.setSchema`
+   - `await db.renameTable`
+   - `await db.renameColumn`
+   - `await db.dropTable`
+   - `await db.dropColumn`
+   - `await db.addTable`
+   - `await db.addColumn`
 - Soporta métodos de persistencia:
-   - `hydrate`
-   - `dehydrate`
+   - `db.hydrate`
+   - `db.dehydrate`
 - Soporta métodos de CRUD:
-   - `selectMany`
-   - `insertOne`
-   - `insertMany`
-   - `updateOne`
-   - `updateMany`
-   - `deleteOne`
-   - `deleteMany`
-   - `modifyAll`
-   - `expandRecords`
-   - `attachRecords`
+   - `await db.selectMany`
+   - `await db.insertOne`
+   - `await db.insertMany`
+   - `await db.updateOne`
+   - `await db.updateMany`
+   - `await db.deleteOne`
+   - `await db.deleteMany`
+   - `await db.modifyAll`
+   - `await db.expandRecords`
+   - `await db.attachRecords`
+- Soporta una API para proxificar datasets con:
+   - `proxy = FlexibleDB.DatasetProxy.from`
+   - `proxy.$dataset`
+   - `proxy.$database`
+   - `proxy.$table`
+   - `proxy.findBySelector`
+   - `proxy.setDataset`
+   - `proxy.setTable`
+   - `proxy.setDatabase`
+   - `proxy.getDataset`
+   - `proxy.copy`
+   - `proxy.clone`
+   - `proxy.deduplicate`
+   - `await proxy.expandRecords`
+   - `await proxy.attachRecords`
+   - `await proxy.filter`
+   - `await proxy.map`
+   - `await proxy.reduce`
+   - `await proxy.each`
+   - `await proxy.expandRecords`
+   - `await proxy.attachRecords`
 
 ## API
 
@@ -273,6 +294,113 @@ Requiere de relaciones `array-reference` o `object-reference`, concretamente que
 - El parámetro `referredColumn` indica la columna de `db.$schema[referredTable]` que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
 
 
+#### `server = db.createServer(port:Integer):BasicServer`
+
+Crea una instancia de `new FlexibleDB.BasicServer` si está encuentra `global`, que sobreentiende entorno `node.js`.
+
+A continuación se expone la interfaz de `FlexibleDB.BasicServer` mediante la instancia `server`.
+
+#### `server.start(port:Integer = this.$port):Promise`
+
+Inicia un servidor en el puerto especificado. Si había alguno corriendo, lo sobreescribirá sin importarle su estado.
+
+El servidor va a esperar 2 parámetros:
+
+```js
+request.body.opcode:String = "unknown"
+request.body.parameters:Array = []
+```
+
+#### `server.stop():Promise`
+
+Para el servidor que estuviera corriendo.
+
+#### `server.clone():BasicServer`
+
+Devuelve otra instancia de `BasicServer.from(...server)`.
+
+#### `server.operation(opcode:String, args:Array):any`
+
+Ejecuta una acción contemplada en la API de `operation` pasándole los parámetros especificados.
+
+Los `opcode` válidos actualmente solo son los **nombres finales** de los **métodos** de la API. Aquí sus firmas:
+
+- `server.$database.selectOne(table:String, id:Integer)`
+- `server.$database.selectMany(table:String, filter:Function, expander:Object, showTable:Boolean)`
+- `server.$database.insertOne(table:String, item:Object)`
+- `server.$database.insertMany(table:String, items:Array)`
+- `server.$database.updateOne(table:String, id, props:Object)`
+- `server.$database.updateMany(table:String, filter:Function, props:Object)`
+- `server.$database.deleteOne(table:String, id:Integer)`
+- `server.$database.deleteMany(table:String, filter:Function)`
+
+Las que usan `Function` pueden funcionar con una serie de reglas:
+
+```js
+await server.operation("selectMany", ["Grupos", [
+  ["id", "=", 1]
+]]);
+```
+
+Este subset para selectores permite operaciones por servidor que sean seguras.
+
+Se permiten los siguientes operadores, formando sentencias encadenadas por ` && ` lógico.
+
+Aquí es donde se transforman en operaciones:
+
+```js
+switch(op) {
+  case "=": {
+    isValid = isValid && row[column] === target;
+    break;
+  }
+  case "!=": {
+    isValid = isValid && (row[column] !== target);
+    break;
+  }
+  case "<": {
+    isValid = isValid && (row[column] < target);
+    break;
+  }
+  case ">": {
+    isValid = isValid && (row[column] > target);
+    break;
+  }
+  case "<=": {
+    isValid = isValid && (row[column] <= target);
+    break;
+  }
+  case ">=": {
+    isValid = isValid && (row[column] >= target);
+    break;
+  }
+  case "is null": {
+    isValid = isValid && (row[column] === null);
+    break;
+  }
+  case "is not null": {
+    isValid = isValid && (row[column] !== null);
+    break;
+  }
+  case "is in": {
+    isValid = isValid && (target.indexOf(row[column]) !== -1);
+    break;
+  }
+  case "is not in": {
+    isValid = isValid && (target.indexOf(row[column]) === -1);
+    break;
+  }
+  case "has": {
+    isValid = isValid && (row[column].indexOf(target) !== -1);
+    break;
+  }
+  case "has not": {
+    isValid = isValid && (row[column].indexOf(target) === -1);
+    break;
+  }
+}
+```
+
 #### `proxy = db.proxifyDataset(dataset:Array, table:String = null)`
 
 Crea una instancia de `new FlexibleDB.DatasetProxy(dataset, table, db)` sobreentendiendo la `db` propia.
@@ -361,7 +489,7 @@ La firma contractual de la función es la típica de `Array.prototype.each`.
 
 Permite expandir registros del dataset con la database.
 
-Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(...contract)` dando por sobreentendido el `dataset`.
+Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(sourceTable, dataset, expandSpec)` dando por sobreentendido el `dataset`.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
@@ -369,9 +497,11 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 Permite adjuntar registros del dataset con la database.
 
-Sigue el mismo contrato de tipos que el homónimo `db.attachRecords(...contract)` dando por sobreentendido el `dataset`.
+Sigue el mismo contrato de tipos que el homónimo `db.attachRecords(sourceTable, newColumn, referredTable, referredColumn, dataset)` dando por sobreentendido el `dataset`.
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+
 
 
 
@@ -389,6 +519,7 @@ Estos son los tests actualmente:
 - [test-of-relations.js](https://github.com/allnulled/flexible-db/blob/main/test-of-relations.js)
 - [test-of-complex-query.js](https://github.com/allnulled/flexible-db/blob/main/test-of-complex-query.js)
 - [test-of-dataset-proxy.js](https://github.com/allnulled/flexible-db/blob/main/test-of-dataset-proxy.js)
+- [test-of-server.js](https://github.com/allnulled/flexible-db/blob/main/test-of-server.js)
 - [test-of-default.js](https://github.com/allnulled/flexible-db/blob/main/test-of-default.js)
 
 

@@ -43,6 +43,11 @@
 - Soporte para `db.proxifyDatabaset(dataset, table)`
 - Soporte para interfaz de `FlexibleDB.DatasetProxy`
 
+## Versión 3.0.15
+
+- Soporte para `db.createServer(port)`
+- Soporte para interfaz de `FlexibleDB.BasicServer`
+
 ----
 
 # Sobre la versión 2.

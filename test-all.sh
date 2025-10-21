@@ -9,5 +9,6 @@ node test-of-uniqueness.js
 node test-of-relations-schema.js
 node test-of-complex-query.js
 node test-of-dataset-proxy.js
+node test-of-server.js
 node test-of-default.js
 # node test-of-performance.js
