@@ -572,7 +572,7 @@
       await this.triggerDatabase("selectOne", [table, id]);
       assertion(id in this.$data[table], `No row found by «id=${id}» on «selectOne»`);
       const row = this.copyObject(this.$data[table][id]);
-      if(withTableType) {
+      if (withTableType) {
         row.type = table;
       }
       return row;
@@ -587,15 +587,15 @@
       }
       await this.triggerDatabase("selectMany", [table, filter]);
       const all = this.copyObject(Object.values(this.$data[table] || {}));
-      if(withTableType !== false) {
+      if (withTableType !== false) {
         const key = typeof withTableType === "string" ? withTableType : "type";
-        for(let indexRow=0; indexRow<all.length; indexRow++) {
+        for (let indexRow = 0; indexRow < all.length; indexRow++) {
           const row = all[indexRow];
           row[key] = table;
         }
       }
       const filtered = all.filter(filter);
-      if(expandSpec) {
+      if (expandSpec) {
         return this.expandRecords(table, filtered, expandSpec);
       }
       return filtered;
@@ -823,9 +823,9 @@
       }
     }
 
-    async expandRecords(tableName, records, expandSpec) {
+    async expandRecords(sourceTable, records, expandSpec) {
       this.trace("expandRecords");
-      const tableSchema = this.$schema[tableName];
+      const tableSchema = this.$schema[sourceTable];
       const expandedRecords = [];
       Iterating_records:
       for (const record of records) {
@@ -884,11 +884,11 @@
       const isArray = this.$schema[referredTable][referredColumn].type === "array-reference";
       const isObject = this.$schema[referredTable][referredColumn].type === "object-reference";
       const attachedRecords = [];
-      for(let indexRecord=0; indexRecord<records.length; indexRecord++) {
+      for (let indexRecord = 0; indexRecord < records.length; indexRecord++) {
         const record = records[indexRecord];
-        const filter = isArray ? function(line) {
-          return line[referredColumn].indexOf(record.id) !== -1; 
-        } : function(line) {
+        const filter = isArray ? function (line) {
+          return line[referredColumn].indexOf(record.id) !== -1;
+        } : function (line) {
           return line[referredColumn] === record.id;
         };
         const matchedReferences = await this.selectMany(referredTable, filter);
@@ -897,9 +897,194 @@
       return attachedRecords;
     }
 
-  }
+  };
 
-  const FlexibleDB = class extends FlexibleDBCrudLayer {
+  const FlexibleDBProxiesLayer = class extends FlexibleDBCrudLayer {
+
+    static DatasetProxy = class {
+
+      static from(...args) {
+        return new this(...args);
+      }
+
+      constructor(dataset, table = null, database = null) {
+        this.$dataset = dataset;
+        this.$table = table;
+        this.$database = database;
+      }
+
+      findBySelector(selectorList = []) {
+        // Si el selector está vacío o sólo tiene "*", devuelve el dataset completo
+        assertion(Array.isArray(selectorList), `Parameter «selectorList» must be an array on «DatasetProxy.findBySelector»`);
+        for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
+          const selectorItem = selectorList[indexSelector];
+          assertion(typeof selectorItem === "string", `Parameter «selectorList[${indexSelector}]» must be a string on «DatasetProxy.findBySelector»`);
+        }
+        if ((selectorList.length === 0) || (selectorList.length === 1 && selectorList[0] === "*")) {
+          return this;
+        }
+        let output = this.$dataset;
+        for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
+          const selectorItem = selectorList[indexSelector];
+          if (selectorItem === "*") {
+            output = output;
+          } else {
+            let requiresFlat = false;
+            output = output.map((row) => {
+              if(Array.isArray(row[selectorItem])) {
+                requiresFlat = true;
+              }
+              return row[selectorItem];
+            });
+            if(requiresFlat) {
+              output = output.flat();
+            }
+          }
+        }
+        this.$dataset = output;
+        return this;
+      }
+
+      setDataset(dataset) {
+        this.$dataset = dataset;
+        return this;
+      }
+
+      setTable(table) {
+        this.$table = table;
+        return this;
+      }
+
+      setDatabase(database) {
+        this.$database = database;
+        return this;
+      }
+
+      getDataset() {
+        return this.$dataset;
+      }
+
+      copy() {
+        this.$dataset = JSON.parse(JSON.stringify(this.$dataset));
+        return this;
+      }
+
+      clone() {
+        return new this.constructor(this.$dataset, this.$table, this.$database);
+      }
+
+      async filter(callback) {
+        const output = [];
+        for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
+          const row = this.$dataset[indexRow];
+          try {
+            const isFiltered = await callback(row, indexRow);
+            if (isFiltered === true) {
+              output.push(row);
+            }
+          } catch (error) {
+            console.log(error);
+            console.log("filter failed but process continues anyway.");
+          }
+        }
+        this.$dataset = output;
+        return true;
+      }
+
+      async map(callback) {
+        const output = [];
+        for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
+          const row = this.$dataset[indexRow];
+          try {
+            const isModified = await callback(row, indexRow);
+            if (typeof isModified !== "undefined") {
+              output.push(isModified);
+            } else {
+              output.push(row);
+            }
+          } catch (error) {
+            console.log(error);
+            console.log("map failed but process continues anyway.");
+          }
+        }
+        this.$dataset = output;
+        return this;
+      }
+
+      async reduce(callback, original = []) {
+        let output = original;
+        for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
+          const row = this.$dataset[indexRow];
+          try {
+            const isChanged = await callback(output, row, indexRow);
+            if (typeof isChanged !== "undefined") {
+              if (output !== isChanged) {
+                output = isChanged;
+              }
+            }
+          } catch (error) {
+            console.log(error);
+            console.log("reduce failed, but process continues anyway.");
+          }
+        }
+        this.$dataset = output;
+        return this;
+      }
+
+      flat() {
+        this.$dataset = this.$dataset.flat();
+        return this;
+      }
+
+      async each(callback, original = []) {
+        let output = original;
+        for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
+          const row = this.$dataset[indexRow];
+          try {
+            await callback(output, row, indexRow);
+          } catch (error) {
+            console.log(error);
+            console.log("(each failed, but process continues anyway.");
+          }
+        }
+        return this;
+      }
+
+      deduplicate() {
+        const output = [];
+        const outputIds = [];
+        for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
+          const row = this.$dataset[indexRow];
+          const hasRowId = !!row.id;
+          const pos = outputIds.indexOf(hasRowId ? row.id : row);
+          if (pos === -1) {
+            outputIds.push(hasRowId ? row.id : row);
+            output.push(row);
+          }
+        }
+        this.$dataset = output;
+        return this;
+      }
+
+      async expandRecords(sourceTable, expandSpec = {}) {
+        await this.$database.expandRecords(sourceTable, this.$dataset, expandSpec);
+        return this;
+      }
+
+      async attachRecords(sourceTable, newColumn, referredTable, referredColumn) {
+        await this.$database.attachRecords(sourceTable, newColumn, referredTable, referredColumn, this.$dataset);
+        return this;
+      }
+
+    };
+
+    proxifyDataset(dataset, table) {
+      return new this.constructor.DatasetProxy(dataset, table, this);
+    }
+
+  };
+
+  const FlexibleDB = class extends FlexibleDBProxiesLayer {
 
   };
 

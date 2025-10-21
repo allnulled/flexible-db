@@ -273,6 +273,100 @@ Requiere de relaciones `array-reference` o `object-reference`, concretamente que
 - El parámetro `referredColumn` indica la columna de `db.$schema[referredTable]` que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
 
 
+#### `proxy = db.proxifyDataset(dataset:Array, table:String = null)`
+
+Crea una instancia de `new FlexibleDB.DatasetProxy(database, table, db)` sobreentendiendo la `db` propia.
+
+A continuación se expone la interfaz de `FlexibleDB.DatasetProxy` mediante la instancia `proxy`.
+
+#### `proxy.$dataset`
+
+El `dataset` sobre el que se está iterando.
+
+#### `proxy.$database`
+
+La `database` que se está usando para tipos.
+
+#### `proxy.$table`
+
+La `table` que se sobreentiende como tipo del `dataset`.
+
+#### `proxy.findBySelector(selectorList = []):DatasetProxy`
+
+Permite cambiar el dataset con una subselección interna y encadenar otros métodos.
+
+#### `proxy.setDataset(dataset):DatasetProxy`
+
+Permite cambiar el dataset y encadenar otros métodos.
+
+#### `proxy.setTable(table):DatasetProxy`
+
+Permite cambiar la tabla del dataset y encadenar otros métodos.
+
+#### `proxy.setDatabase(database):DatasetProxy`
+
+Permite cambiar la base de datos del dataset y encadenar otros métodos.
+
+#### `proxy.getDataset():any`
+
+Permite obtener el dataset propiamente.
+
+#### `proxy.copy():DatasetProxy`
+
+Permite hacer una copia JSON (con `stringify` y `parse`) del dataset y encadenar otros métodos.
+
+#### `proxy.clone():DatasetProxy`
+
+Permite hacer un clon del `DatasetProxy` y encadenar otros métodos.
+
+Es útil para iterar datos de un subset o al menos una copia diferente de proxy.
+
+#### `proxy.deduplicate():DatasetProxy`
+
+Permite desduplicar un conjunto de datos. Utiliza el `row.id` y si no lo encuentra, el `row` directamente.
+
+#### `async proxy.filter(callback):Promise<DatasetProxy>`
+
+Permite hacer `filter` asíncronamente para operar sobre el dataset.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+#### `async proxy.map(callback):Promise<DatasetProxy>`
+
+Permite hacer `map` asíncronamente para operar sobre el dataset.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+#### `async proxy.reduce(callback, original = []):Promise<DatasetProxy>`
+
+Permite hacer `reduce` asíncronamente para operar sobre el dataset.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+#### `async proxy.each(callback, original = []):Promise<DatasetProxy>`
+
+Permite hacer `each` asíncronamente para operar sobre el dataset.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+#### `async proxy.expandRecords(sourceTable, expandSpec = {}):Promise<DatasetProxy>`
+
+Permite expandir registros del dataset con la database.
+
+Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(...contract)` dando por sobreentendido el `dataset`.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+#### `async proxy.attachRecords(sourceTable, newColumn, referredTable, referredColumn):Promise<DatasetProxy>`
+
+Permite adjuntar registros del dataset con la database.
+
+Sigue el mismo contrato de tipos que el homónimo `db.attachRecords(...contract)` dando por sobreentendido el `dataset`.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+
+
 ## Tests
 
 Estos son los tests actualmente:

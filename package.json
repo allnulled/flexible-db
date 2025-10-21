@@ -7,7 +7,7 @@
     "dev": "bash dev.sh",
     "test": "bash test-all.sh"
   },
-  "keywords": [],
+  "keywords": ["database", "db", "schema", "schema-driven", "dataset", "flexible-db", "flexible", "allnulled", "expandRecords", "attachRecords"],
   "author": "allnulled",
   "license": "WTFPL"
 }
