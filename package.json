@@ -1,13 +1,24 @@
 {
   "name": "@allnulled/flexible-db",
-  "version": "3.0.12",
+  "version": "3.0.13",
   "description": "Base de datos basada en JavaScript",
   "main": "flexible-db.js",
   "scripts": {
     "dev": "bash dev.sh",
     "test": "bash test-all.sh"
   },
-  "keywords": ["database", "db", "schema", "schema-driven", "dataset", "flexible-db", "flexible", "allnulled", "expandRecords", "attachRecords"],
+  "keywords": [
+    "database",
+    "db",
+    "schema",
+    "schema-driven",
+    "dataset",
+    "flexible-db",
+    "flexible",
+    "allnulled",
+    "expandRecords",
+    "attachRecords"
+  ],
   "author": "allnulled",
   "license": "WTFPL"
 }
