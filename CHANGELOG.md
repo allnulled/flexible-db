@@ -2,7 +2,7 @@
 
 # Sobre la versión 4.
 
-## Versión 3.0.1
+## Versión 4.0.1
 
 - Retirada de API del `selectMany` con capacidad de expandir datos:
    - Rompe la separación por tablas necesaria para el auth

@@ -35,6 +35,8 @@ const main = async function () {
     },
     Permiso: {
       nombre: { type: "string", unique: true },
+      operacion: { type: "string" },
+      descripcion: { type: "string" },
     },
     Legislacion: {
       titulo: { type: "string" },
@@ -64,10 +66,39 @@ const main = async function () {
   await flexdb.insertOne("Usuario", { persona: 3, alias: "usuario3", email: "usuario3@gmail.org", password: "123456" });
   await flexdb.insertOne("Permiso", { nombre: "administrar" });
   await flexdb.insertOne("Permiso", { nombre: "movimiento de mercancías" });
+  const permisoInsertOne = await flexdb.insertOne("Permiso", { operacion: "server.insertOne" });
+  const permisoInsertMany = await flexdb.insertOne("Permiso", { operacion: "server.insertMany" });
+  const permisoUpdateOne = await flexdb.insertOne("Permiso", { operacion: "server.updateOne" });
+  const permisoUpdateMany = await flexdb.insertOne("Permiso", { operacion: "server.updateMany" });
+  const permisoDeleteOne = await flexdb.insertOne("Permiso", { operacion: "server.deleteOne" });
+  const permisoDeleteMany = await flexdb.insertOne("Permiso", { operacion: "server.deleteMany" });
+  const permisoAddTable = await flexdb.insertOne("Permiso", { operacion: "server.addTable" });
+  const permisoAddColumn = await flexdb.insertOne("Permiso", { operacion: "server.addColumn" });
+  const permisoRenameTable = await flexdb.insertOne("Permiso", { operacion: "server.renameTable" });
+  const permisoRenameColumn = await flexdb.insertOne("Permiso", { operacion: "server.renameColumn" });
+  const permisoDropTable = await flexdb.insertOne("Permiso", { operacion: "server.dropTable" });
+  const permisoDropColumn = await flexdb.insertOne("Permiso", { operacion: "server.dropColumn" });
+  const permisoSetSchema = await flexdb.insertOne("Permiso", { operacion: "server.setSchema" });
+  const permisoGetSchema = await flexdb.insertOne("Permiso", { operacion: "server.getSchema" });
   await flexdb.insertOne("Grupo", {
     nombre: "administración",
     usuarios: [1],
-    permisos: [1],
+    permisos: [
+      permisoInsertOne,
+      permisoInsertMany,
+      permisoUpdateOne,
+      permisoUpdateMany,
+      permisoDeleteOne,
+      permisoDeleteMany,
+      permisoAddTable,
+      permisoAddColumn,
+      permisoRenameTable,
+      permisoRenameColumn,
+      permisoDropTable,
+      permisoDropColumn,
+      permisoSetSchema,
+      permisoGetSchema
+    ],
     legislaciones: [legislacion1, legislacion2]
   });
   await flexdb.insertOne("Grupo", {
@@ -135,7 +166,7 @@ const main = async function () {
     FlexibleDB.assertion(data2.result.length === 1, `Parameter «data2.result.length» must be 1`);
     FlexibleDB.assertion(data2.result[0].id === 1, `Parameter «data2.result[0].id» must be 1`);
 
-    const responseLogin = await fetch("http://127.0.0.1:9090", {
+    const responseLogin1 = await fetch("http://127.0.0.1:9090", {
       method: "POST",
       headers: {
         "Content-type": "application/json",
@@ -150,9 +181,9 @@ const main = async function () {
       })
     });
 
-    const login1 = await responseLogin.json();
+    const login1 = await responseLogin1.json();
 
-    const sessionToken = login1.result;
+    const sessionToken1 = login1.result;
 
     const response3 = await fetch("http://127.0.0.1:9090", {
       method: "POST",
@@ -161,7 +192,7 @@ const main = async function () {
       },
       body: JSON.stringify({
         opcode: "updateOne",
-        authentication: sessionToken,
+        authentication: sessionToken1,
         parameters: [
           "Grupo",
           1,
@@ -173,6 +204,46 @@ const main = async function () {
     const data3 = await response3.json();
 
     FlexibleDB.assertion(data3.opcode === "updateOne", `Parameter «data3.opcode» must be 'updateOne'`);
+
+    const responseLogin2 = await fetch("http://127.0.0.1:9090", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        opcode: "login",
+        parameters: [
+          "usuario2",
+          null,
+          "123456",
+        ],
+      })
+    });
+
+    const login2 = await responseLogin2.json();
+
+    const sessionToken2 = login2.result;
+
+    const update1 = await fetch("http://127.0.0.1:9090", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        opcode: "updateOne",
+        authentication: sessionToken2,
+        parameters: [
+          "Grupo",
+          1,
+          { nombre: "Otro nombre inventado" }
+        ],
+      })
+    });
+
+    const data4 = await update1.json();
+
+    FlexibleDB.assertion(data4.error.name === "AssertionError", "Parameter «data4.error.name» must be 'AssertionError'");
+    FlexibleDB.assertion(data4.error.message === "No permission found for «server.updateOne» on «onAuthenticate»", "Parameter «data4.error.message» must be '...'");
 
     server.stop();
     // console.log(5);

@@ -1089,6 +1089,13 @@
         return true;
       }
 
+      filterById(id) {
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «filterById»`);
+        assertion(typeof id === "string", `Parameter «id» must be a string on «filterById»`);
+        this.$dataset = this.$dataset.filter(row => row[id]);
+        return this;
+      }
+
       async map(callback) {
         const output = [];
         assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «map»`);
@@ -1108,6 +1115,13 @@
           }
         }
         this.$dataset = output;
+        return this;
+      }
+
+      mapById(id) {
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «mapById»`);
+        assertion(typeof id === "string", `Parameter «id» must be a string on «mapById»`);
+        this.$dataset = this.$dataset.map(row => row[id]);
         return this;
       }
 
@@ -1237,15 +1251,26 @@
             await this.$database.attachRecords("Usuario", "grupos", "Grupo", "usuarios", dataset1);
             await this.$database.expandRecords("Grupo", dataset1[0].grupos, {
               permisos: true,
-              usuarios: true,
             });
-            // @TODO
-            // @TODO
-            // @TODO
-            // @TODO
-            // @TODO
-            // @TODO
-            // @TODO
+            const proxy1 = await this.$database.proxifyDataset(dataset1, "Usuario");
+            const proxyOperaciones = proxy1.findBySelector(["grupos", "permisos"]).flat().deduplicate().mapById("operacion");
+            const allOperaciones = proxyOperaciones.getDataset();
+            const serverEvent = "server." + opcode;
+            const eventIds = [serverEvent];
+            const subevents = eventIds[0].split(".");
+            let isValid = allOperaciones.indexOf(eventIds[0]) !== -1;
+            if(!isValid) {
+              Iterate_subevents:
+              for(let index=0; index<subevents.length; index++) {
+                const omitted = subevents.pop();
+                const subevent = subevents.concat(["*"]).join(".");
+                isValid = allOperaciones.indexOf(subevent) !== -1;
+                if(isValid) {
+                  break Iterate_subevents;
+                }
+              }
+            }
+            assertion(isValid, `No permission found for «${eventIds[0]}» on «onAuthenticate»`);
           }
         }
       }
