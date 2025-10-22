@@ -578,20 +578,24 @@
       return row;
     }
 
-    transformFilterByUser(filterByUser) {
-      if(!Array.isArray(filterByUser)) {
+    transformFilterByUser(filterByUser, blockEmpty = false) {
+      if (!Array.isArray(filterByUser)) {
         return filterByUser;
       }
-      if(!filterByUser.length) {
-        return () => true;
+      if (!filterByUser.length) {
+        if (blockEmpty) {
+          return () => false;
+        } else {
+          return () => true;
+        }
       }
-      return function(row) {
+      return function (row) {
         let isValid = true;
-        for(let index=0; index<filterByUser.length; index++) {
+        for (let index = 0; index < filterByUser.length; index++) {
           const filterRule = filterByUser[index];
           assertion(Array.isArray(filterRule), `Parameter «filterByUser» on index «${index}» must be an array on «transformFilterByUser»`)
-          const [ column, op, target, targetType = "string"] = filterRule;
-          switch(op) {
+          const [column, op, target, targetType = "string"] = filterRule;
+          switch (op) {
             case "=": {
               isValid = isValid && row[column] === target;
               break;
@@ -643,7 +647,7 @@
             default:
               throw new Error(`Logical operator not found «${op}» on «transformFilterByUser»`);
           }
-          if(!isValid) {
+          if (!isValid) {
             return false;
           }
         }
@@ -651,26 +655,24 @@
       };
     }
 
-    async selectMany(table, filterByUser = SELECT_ALL_FILTER, expandSpec = false, withTableType = false) {
+    async selectMany(table, filterByUser = SELECT_ALL_FILTER, withTableType = false) {
       this.trace("selectMany");
-      const filter = this.transformFilterByUser(filterByUser);
+      const filter = this.transformFilterByUser(filterByUser, false);
       Basic_validation: {
         assertion(typeof table === "string", "Parameter «table» must be a string on «selectMany»");
         assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «selectMany»");
         assertion(typeof filter === "function", "Parameter «filter» must be a function on «selectMany»");
+        assertion((typeof withTableType === "boolean") || (typeof withTableType === "string"), "Parameter «withTableType» must be a boolean or a string on «selectMany»");
       }
       await this.triggerDatabase("selectMany", [table, filter]);
       const all = this.copyObject(Object.values(this.$data[table] || {}));
+      const filtered = all.filter(filter);
       if (withTableType !== false) {
         const key = typeof withTableType === "string" ? withTableType : "type";
-        for (let indexRow = 0; indexRow < all.length; indexRow++) {
-          const row = all[indexRow];
+        for (let indexRow = 0; indexRow < filtered.length; indexRow++) {
+          const row = filtered[indexRow];
           row[key] = table;
         }
-      }
-      const filtered = all.filter(filter);
-      if (expandSpec) {
-        return this.expandRecords(table, filtered, expandSpec);
       }
       return filtered;
     }
@@ -758,9 +760,10 @@
       }
     }
 
-    async updateMany(table, filter, properties) {
+    async updateMany(table, filterByUser, properties) {
       this.trace("updateMany");
       await this.$options.onLock(this);
+      const filter = this.transformFilterByUser(filterByUser, true);
       try {
         Basic_validation: {
           assertion(typeof table === "string", "Parameter «table» must be a string on «updateMany»");
@@ -823,9 +826,10 @@
       }
     }
 
-    async deleteMany(table, filter) {
+    async deleteMany(table, filterByUser = []) {
       this.trace("deleteMany");
       await this.$options.onLock(this);
+      const filter = this.transformFilterByUser(filterByUser, true);
       try {
         Basic_validation: {
           assertion(typeof table === "string", "Parameter «table» must be a string on «deleteMany»");
@@ -897,8 +901,26 @@
       }
     }
 
+    async expandRecordsBySelector(sourceTable, records, selector, expandSpec) {
+      this.trace("expandRecordsBySelector");
+      assertion(typeof sourceTable === "string", `Parameter «sourceTable» must be a string on «expandRecordsBySelector»`);
+      assertion(Array.isArray(selector), `Parameter «selector» must be an arrau on «expandRecordsBySelector»`);
+      assertion(Array.isArray(records), `Parameter «records» must be an array on «expandRecordsBySelector»`);
+      assertion(typeof expandSpec === "object", `Parameter «expandSpec» must be an object on «expandRecordsBySelector»`);
+      let secondSet = records;
+      for(let index=0; index<selector.length; index++) {
+        const selectorItem = selector[index];
+        secondSet = secondSet[selectorItem];
+      }
+      await this.expandRecords(sourceTable, secondSet, expandSpec);
+      return records;
+    }
+
     async expandRecords(sourceTable, records, expandSpec) {
       this.trace("expandRecords");
+      assertion(typeof sourceTable === "string", `Parameter «sourceTable» must be a string on «expandRecords»`);
+      assertion(Array.isArray(records), `Parameter «records» must be an array on «expandRecords»`);
+      assertion(typeof expandSpec === "object", `Parameter «expandSpec» must be an object on «expandRecords»`);
       const tableSchema = this.$schema[sourceTable];
       const expandedRecords = [];
       Iterating_records:
@@ -1005,12 +1027,12 @@
           } else {
             let requiresFlat = false;
             output = output.map((row) => {
-              if(Array.isArray(row[selectorItem])) {
+              if (Array.isArray(row[selectorItem])) {
                 requiresFlat = true;
               }
               return row[selectorItem];
             });
-            if(requiresFlat) {
+            if (requiresFlat) {
               output = output.flat();
             }
           }
@@ -1049,6 +1071,8 @@
 
       async filter(callback) {
         const output = [];
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «filter»`);
+        assertion(typeof callback === "function", `Parameter «callback» must be a function on «filter»`);
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
@@ -1067,6 +1091,8 @@
 
       async map(callback) {
         const output = [];
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «map»`);
+        assertion(typeof callback === "function", `Parameter «callback» must be a function on «map»`);
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
@@ -1087,6 +1113,8 @@
 
       async reduce(callback, original = []) {
         let output = original;
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «reduce»`);
+        assertion(typeof callback === "function", `Parameter «callback» must be a function on «reduce»`);
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
@@ -1112,6 +1140,8 @@
 
       async each(callback, original = []) {
         let output = original;
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «each»`);
+        assertion(typeof callback === "function", `Parameter «callback» must be a function on «each»`);
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
@@ -1127,9 +1157,10 @@
       deduplicate() {
         const output = [];
         const outputIds = [];
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «deduplicate»`);
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
-          const hasRowId = !!row.id;
+          const hasRowId = typeof row?.id !== "undefined";
           const pos = outputIds.indexOf(hasRowId ? row.id : row);
           if (pos === -1) {
             outputIds.push(hasRowId ? row.id : row);
@@ -1162,20 +1193,125 @@
 
     static BasicServer = class {
 
-      static from (...args) {
+      static from(...args) {
         return new this(...args);
       }
 
-      constructor(port, database) {
+      static defaultOptions = {
+        authentication: false,
+      };
+
+      constructor(port, database, options = {}) {
         this.$port = port;
         this.$database = database;
         this.$app = null;
         this.$server = null;
+        this.$options = Object.assign({}, this.constructor.defaultOptions, options);
       }
 
-      async operation(opcode, args = []) {
+      async onAuthenticate(opcode, args, authenticationToken = null) {
+        assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «BasicServer.onAuthenticate»`);
+        assertion(typeof args === "object", `Parameter «args» must be an object on «BasicServer.onAuthenticate»`);
+        if(authenticationToken !== null) {
+          assertion(typeof authenticationToken === "string", `Parameter «authenticationToken» must be a string on «BasicServer.onAuthenticate»`);
+        }
+        Authentication_process: {
+          if (this.$options.authentication !== true) {
+            break Authentication_process;
+          }
+          const [table] = args;
+          const isSensibleOperation = ["insertOne", "insertMany", "updateOne", "updateMany", "deleteOne", "deleteMany", "addTable", "addColumn", "renameTable", "renameColumn", "dropTable", "dropColumn", "setSchema"].indexOf(opcode) !== -1;
+          const isSensibleTable = ["Usuario", "Sesion"].indexOf(table) !== -1;
+          if (isSensibleOperation) {
+            assertion(authenticationToken !== null, `Authentication cannot be null due to sensible operation «${opcode}» on «BasicServer.onAuthenticate»`);
+          } else if (isSensibleTable) {
+            assertion(authenticationToken !== null, `Authentication cannot be null due to sensible table «${table}» on «BasicServer.onAuthenticate»`);
+          }
+          On_sensible_context:
+          if(isSensibleOperation || isSensibleTable) {
+            const openedSessions = await this.$database.selectMany("Sesion", [["token", "=", authenticationToken]]);
+            assertion(openedSessions.length !== 0, `No opened sessions with token provided on sensible context`);
+            const dataset1 = await this.$database.selectMany("Usuario", [
+              ["id", "=", openedSessions[0].id]
+            ]);
+            await this.$database.attachRecords("Usuario", "grupos", "Grupo", "usuarios", dataset1);
+            await this.$database.expandRecords("Grupo", dataset1[0].grupos, {
+              permisos: true,
+              usuarios: true,
+            });
+            // @TODO
+            // @TODO
+            // @TODO
+            // @TODO
+            // @TODO
+            // @TODO
+            // @TODO
+          }
+        }
+      }
+
+      generateSessionToken(len = 10) {
+        let alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+        let output = "";
+        while(output.length < len) {
+          output += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+        return output;
+      }
+
+      async login(username, email, password) {
+        assertion(typeof username === "string" || typeof email === "string", `Parameter «username» or «email» must be a string on «BasicServer.login»`);
+        assertion(typeof password === "string", `Parameter «password» must be a string on «BasicServer.login»`);
+        const usuariosMatched = await this.$database.selectMany("Usuario", function(it) {
+          const isMatch = it.alias === username || it.email === email;
+          return isMatch;
+        });
+        assertion(usuariosMatched.length !== 0, `No user matched by name or email «${username}» or «${email}» on «BasicServer.login»`);
+        assertion(usuariosMatched[0].password === password, `Password is not correct`);
+        const usuarioId = usuariosMatched[0].id;
+        const activeSessions = await this.$database.selectMany("Sesion", row => {
+          return row.usuario === usuarioId;
+        });
+        const newToken = this.generateSessionToken(100);
+        if(activeSessions.length === 0) {
+          await this.$database.insertOne("Sesion", {
+            token: newToken,
+            usuario: usuarioId
+          });
+        } else {
+          await this.$database.updateMany("Sesion", [
+            ["usuario", "=", usuarioId]
+          ], {
+            token: newToken
+          });
+        }
+        return newToken;
+      }
+
+      async logout(sessionToken) {
+        // @TODO...
+        assertion(typeof sessionToken === "string", `Parameter «sessionToken» must be a string on «BasicServer.logout»`);
+        assertion(sessionToken.length === 10, `Parameter «sessionToken» must have correct length on «BasicServer.logout»`);
+        const matchedSessions = await this.$database.selectMany("Sesion", [
+          ["token", "=", sessionToken]
+        ]);
+        assertion(matchedSessions.length !== 0, `Parameter «sessionToken» must match a current session token on «BasicServer.logout»`);
+        await this.$database.deleteOne("Sesion", matchedSessions[0].id);
+        return true;
+      }
+
+      async operation(opcode, args = [], authenticationToken = null) {
         let output = null;
-        switch(opcode) {
+        await this.onAuthenticate(opcode, args, authenticationToken);
+        switch (opcode) {
+          case "login": {
+            output = await this.login(...args);
+            break;
+          }
+          case "logout": {
+            output = await this.logout(...args);
+            break;
+          }
           case "selectOne": {
             output = await this.$database.selectOne(...args);
             break;
@@ -1208,6 +1344,38 @@
             output = await this.$database.deleteMany(...args);
             break;
           }
+          case "addTable": {
+            output = await this.$database.addTable(...args);
+            break;
+          }
+          case "addColumn": {
+            output = await this.$database.addColumn(...args);
+            break;
+          }
+          case "renameTable": {
+            output = await this.$database.renameTable(...args);
+            break;
+          }
+          case "renameColumn": {
+            output = await this.$database.renameColumn(...args);
+            break;
+          }
+          case "dropTable": {
+            output = await this.$database.dropTable(...args);
+            break;
+          }
+          case "dropColumn": {
+            output = await this.$database.dropColumn(...args);
+            break;
+          }
+          case "getSchema": {
+            output = await this.$database.getSchema(...args);
+            break;
+          }
+          case "setSchema": {
+            output = await this.$database.setSchema(...args);
+            break;
+          }
           default: {
             throw new Error(`Parameter «opcode» must be a known opcode on «BasicServer.operation»`);
           }
@@ -1216,7 +1384,7 @@
       }
 
       async start(port = this.$port) {
-        if(typeof global !== "undefined") {
+        if (typeof global !== "undefined") {
           const express = require("express");
           this.$app = express();
           this.$server = require("http").createServer(this.$app);
@@ -1226,7 +1394,7 @@
             let opcode = "unknown";
             try {
               opcode = (request.body || {}).opcode;
-              const result = await this.operation(opcode, request.body?.parameters);
+              const result = await this.operation(opcode, request.body?.parameters, request.body?.authentication);
               return response.json({
                 opcode: opcode,
                 status: 200,
@@ -1259,7 +1427,7 @@
             }
           });
           await new Promise((resolve, reject) => {
-            this.$server.listen(port, function() {
+            this.$server.listen(port, function () {
               resolve();
             });
           });
@@ -1272,7 +1440,7 @@
       }
 
       stop() {
-        if(this.$server) {
+        if (this.$server) {
           this.$server.close();
         }
         return this;
@@ -1280,8 +1448,8 @@
 
     }
 
-    createServer(port) {
-      return this.constructor.BasicServer.from(port, this);
+    createServer(port, options) {
+      return this.constructor.BasicServer.from(port, this, options);
     }
 
   };

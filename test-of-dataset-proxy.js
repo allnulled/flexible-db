@@ -70,7 +70,9 @@ const main = async function () {
     legislaciones: [legislacion1, legislacion2, legislacion3]
   });
 
-  const dataset1 = await flexdb.selectMany("Legislacion", row => true, {
+  const dataset1 = await flexdb.selectMany("Legislacion", row => true);
+  
+  await flexdb.expandRecords("Legislacion", dataset1, {
     creador: {
       pais: {
         presidentes: true

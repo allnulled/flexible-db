@@ -30,49 +30,55 @@ npm i -s @allnulled/flexible-db
    - `"object-reference"` (con integridad referencial)
    - `"array-reference"` (con integridad referencial)
 - Soporta métodos de esquema:
-   - `await db.getSchema`
-   - `await db.setSchema`
-   - `await db.renameTable`
-   - `await db.renameColumn`
-   - `await db.dropTable`
-   - `await db.dropColumn`
-   - `await db.addTable`
-   - `await db.addColumn`
+   - `await db.getSchema(): Promise<Object>`
+   - `await db.setSchema(schema:Object): Promise`
+   - `await db.renameTable(table:String, newName:String): Promise<Boolean>`
+   - `await db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`
+   - `await db.addTable(table:String): Promise<Boolean>`
+   - `await db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`
+   - `await db.dropTable(table:String): Promise<Boolean>`
+   - `await db.dropColumn(table:String, column:String): Promise<Boolean>`
 - Soporta métodos de persistencia:
    - `db.hydrate`
    - `db.dehydrate`
 - Soporta métodos de CRUD:
-   - `await db.selectMany`
-   - `await db.insertOne`
-   - `await db.insertMany`
-   - `await db.updateOne`
-   - `await db.updateMany`
-   - `await db.deleteOne`
-   - `await db.deleteMany`
-   - `await db.modifyAll`
-   - `await db.expandRecords`
-   - `await db.attachRecords`
+ - `await db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
+   - `await db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`
+   - `await db.insertOne(table:String, value:Object): Promise<Integer>`
+   - `await db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`
+   - `await db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>`
+   - `await db.updateMany(table:String, filter:Function|Array, properties:Object): Promise<Array<Integer>>`
+   - `await db.deleteOne(table:String, id:Integer): Promise<Boolean>`
+   - `await db.deleteMany(table:String, filter:Function|Array): Promise<Array<Integer>>`
+   - `await db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`
+   - `await db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`
+   - `await db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
 - Soporta una API para proxificar datasets con:
-   - `proxy = FlexibleDB.DatasetProxy.from`
-   - `proxy.$dataset`
-   - `proxy.$database`
-   - `proxy.$table`
-   - `proxy.findBySelector`
-   - `proxy.setDataset`
-   - `proxy.setTable`
-   - `proxy.setDatabase`
-   - `proxy.getDataset`
-   - `proxy.copy`
-   - `proxy.clone`
-   - `proxy.deduplicate`
-   - `await proxy.expandRecords`
-   - `await proxy.attachRecords`
-   - `await proxy.filter`
-   - `await proxy.map`
-   - `await proxy.reduce`
-   - `await proxy.each`
-   - `await proxy.expandRecords`
-   - `await proxy.attachRecords`
+   - `proxy = FlexibleDB.DatasetProxy.from(dataset:Array, table:String, database:FlexibleDB)`
+   - `proxy.$dataset:Array`
+   - `proxy.$database:FlexibleDB`
+   - `proxy.$table:String`
+   - `proxy.findBySelector(selectorList:Array = []):DatasetProxy`
+   - `proxy.setDataset(dataset:Array):DatasetProxy`
+   - `proxy.setTable(table:String):DatasetProxy`
+   - `proxy.setDatabase(database:Object):DatasetProxy`
+   - `proxy.getDataset():any`
+   - `proxy.copy():DatasetProxy`
+   - `proxy.clone():DatasetProxy`
+   - `proxy.deduplicate():DatasetProxy`
+   - `await proxy.filter(callback:Function):Promise<DatasetProxy>`
+   - `await proxy.map(callback:Function):Promise<DatasetProxy>`
+   - `await proxy.reduce(callback:Function, original:any = []):Promise<DatasetProxy>`
+   - `await proxy.each(callback:Function):Promise<DatasetProxy>`
+   - `await proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<DatasetProxy>`
+   - `await proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<DatasetProxy>`
+- Soporta una API para desplegar servidores HTTP:
+   - `server = db.createServer(port:Integer):BasicServer`
+   - `await server.start(port:Integer = this.$port):Promise`
+   - `await server.stop():Promise`
+   - `server.clone():BasicServer`
+   - `await server.operation(opcode:String, args:Array):any`
+
 
 ## API
 
@@ -161,29 +167,33 @@ Sobreescribe los `$ids`, `$data` y `$schema` de la base de datos con el `stringi
 
 En `stringifiedDatabase` se espera un `String` como el que devuelve `db.dehydrate()`.
 
-#### `db.selectMany(table:String, filter:Function = SELECT_ALL_FILTER, expandSpec:Object = {}, withTableType:Boolean = false): Promise<Array>`
+#### `db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
 
 Devuelve un `Array` con los registros donde la función `filter` ha devuelto `true`.
 
-Con `expandSpec` puedes pasar un `Object` con más `Object`s dentro para ir expandiendo los tipos. Ejemplo:
+El `filter` también puede ser un array de operaciones booleanas, que aceptan los 3 parámetros típicos:
 
-```js
-db.selectMany("Grupo", () => true, {
-  usuarios: {
-    persona: {
-      pais: true
-    }
-  },
-  permisos: true,
-});
-```
-
-Esto expandirá:
-
-- `Grupo.usuarios` » `Usuario.persona` » `Persona.pais`
-- `Grupo.permisos`
-
-De esta forma, puedes expandir fácilmente los tipos de forma recursiva.
+1. `columna`: nombre de la columna que queremos evaluar.
+2. `operador`: operación lógica que queremos hacer, donde cabe poner:
+   - `=`: igual a
+   - `!=`: diferente de 
+   - `<`: menor que
+   - `<=`: menor o igual que
+   - `>`: mayor que
+   - `>=`: mayor o igual que
+   - `is null`: es nulo
+      - No usa parámetro objeto
+   - `is not null`: no es nulo
+      - No usa parámetro objeto
+   - `has`: cuando la columna es un array, buscará el elemento especificado dentro
+      - Debe usarse con columnas de tipo array
+   - `has not`: igual pero a la inversa
+      - Debe usarse con columnas de tipo array
+   - `in`: cuando el parámetro objeto es un array, buscará que la columna no esté dentro
+      - Debe usarse con un array
+   - `not in`: igual pero a la inversa
+      - Debe usarse con un array
+3. `objeto`: el parámetro con el que se compara.
 
 El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en las rows.
 
@@ -323,16 +333,83 @@ Devuelve otra instancia de `BasicServer.from(...server)`.
 
 Ejecuta una acción contemplada en la API de `operation` pasándole los parámetros especificados.
 
-Los `opcode` válidos actualmente solo son los **nombres finales** de los **métodos** de la API. Aquí sus firmas:
+Los `opcode` válidos actualmente solo son los **nombres finales** de los **métodos** de la API. Aquí el switch cerrado de operaciones:
 
-- `server.$database.selectOne(table:String, id:Integer)`
-- `server.$database.selectMany(table:String, filter:Function, expander:Object, showTable:Boolean)`
-- `server.$database.insertOne(table:String, item:Object)`
-- `server.$database.insertMany(table:String, items:Array)`
-- `server.$database.updateOne(table:String, id, props:Object)`
-- `server.$database.updateMany(table:String, filter:Function, props:Object)`
-- `server.$database.deleteOne(table:String, id:Integer)`
-- `server.$database.deleteMany(table:String, filter:Function)`
+```js
+async operation(opcode, args = []) {
+  let output = null;
+  switch(opcode) {
+    case "selectOne": {
+      output = await this.$database.selectOne(...args);
+      break;
+    }
+    case "selectMany": {
+      output = await this.$database.selectMany(...args);
+      break;
+    }
+    case "insertOne": {
+      output = await this.$database.insertOne(...args);
+      break;
+    }
+    case "insertMany": {
+      output = await this.$database.insertMany(...args);
+      break;
+    }
+    case "updateOne": {
+      output = await this.$database.updateOne(...args);
+      break;
+    }
+    case "updateMany": {
+      output = await this.$database.updateMany(...args);
+      break;
+    }
+    case "deleteOne": {
+      output = await this.$database.deleteOne(...args);
+      break;
+    }
+    case "deleteMany": {
+      output = await this.$database.deleteMany(...args);
+      break;
+    }
+    case "addTable": {
+      output = await this.$database.addTable(...args);
+      break;
+    }
+    case "addColumn": {
+      output = await this.$database.addColumn(...args);
+      break;
+    }
+    case "renameTable": {
+      output = await this.$database.renameTable(...args);
+      break;
+    }
+    case "renameColumn": {
+      output = await this.$database.renameColumn(...args);
+      break;
+    }
+    case "dropTable": {
+      output = await this.$database.dropTable(...args);
+      break;
+    }
+    case "dropColumn": {
+      output = await this.$database.dropColumn(...args);
+      break;
+    }
+    case "getSchema": {
+      output = await this.$database.getSchema(...args);
+      break;
+    }
+    case "setSchema": {
+      output = await this.$database.setSchema(...args);
+      break;
+    }
+    default: {
+      throw new Error(`Parameter «opcode» must be a known opcode on «BasicServer.operation»`);
+    }
+  }
+  return output;
+}
+```
 
 Las que usan `Function` pueden funcionar con una serie de reglas:
 

@@ -63,7 +63,9 @@ const main = async function () {
     legislaciones: [legislacion1, legislacion2, legislacion3]
   });
 
-  const dataset1 = await flexdb.selectMany("Grupo", () => true, {
+  const dataset1 = await flexdb.selectMany("Grupo", () => true);
+  
+  await flexdb.expandRecords("Grupo", dataset1, {
     usuarios: {
       persona: {
         pais: true

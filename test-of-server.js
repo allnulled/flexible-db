@@ -7,6 +7,10 @@ const main = async function () {
   });
 
   await flexdb.setSchema({
+    Sesion: {
+      token: { type: "string", nullable: false },
+      usuario: { type: "object-reference", referredTable: "Usuario", nullable: false },
+    },
     Pais: {
       nombre: { type: "string" },
       presidentes: { type: "array-reference", referredTable: "Persona" }
@@ -18,6 +22,9 @@ const main = async function () {
     },
     Usuario: {
       persona: { type: "object-reference", referredTable: "Persona"  },
+      alias: { type: "string", unique: true },
+      email: { type: "string", unique: true },
+      password: { type: "string" }
     },
     Grupo: {
       nombre: { type: "string", unique: true },
@@ -52,9 +59,9 @@ const main = async function () {
   await flexdb.insertOne("Pais", { nombre: "Andorra", presidentes: [2] });
   await flexdb.insertOne("Pais", { nombre: "Francia", presidentes: [3] });
   await flexdb.insertOne("Pais", { nombre: "Portugal", presidentes: [4] });
-  await flexdb.insertOne("Usuario", { persona: 1 });;
-  await flexdb.insertOne("Usuario", { persona: 2 });;
-  await flexdb.insertOne("Usuario", { persona: 3 });;
+  await flexdb.insertOne("Usuario", { persona: 1, alias: "usuario1", email: "usuario1@gmail.org", password: "123456" });
+  await flexdb.insertOne("Usuario", { persona: 2, alias: "usuario2", email: "usuario2@gmail.org", password: "123456" });
+  await flexdb.insertOne("Usuario", { persona: 3, alias: "usuario3", email: "usuario3@gmail.org", password: "123456" });
   await flexdb.insertOne("Permiso", { nombre: "administrar" });
   await flexdb.insertOne("Permiso", { nombre: "movimiento de mercancías" });
   await flexdb.insertOne("Grupo", {
@@ -70,7 +77,9 @@ const main = async function () {
     legislaciones: [legislacion1, legislacion2, legislacion3]
   });
 
-  const dataset1 = await flexdb.selectMany("Legislacion", row => true, {
+  const dataset1 = await flexdb.selectMany("Legislacion", row => true);
+  
+  await flexdb.expandRecords("Legislacion", dataset1, {
     creador: {
       pais: {
         presidentes: true
@@ -81,7 +90,9 @@ const main = async function () {
   await flexdb.attachRecords("Legislacion", "gruposAdoptivos", "Grupo", "legislaciones", dataset1);
 
   Test_of_dataset_proxy: {
-    const server = flexdb.createServer(9090);
+    const server = flexdb.createServer(9090, {
+      authentication: true
+    });
     // console.log(1);
     await server.start();
     // console.log(2);
@@ -123,6 +134,45 @@ const main = async function () {
 
     FlexibleDB.assertion(data2.result.length === 1, `Parameter «data2.result.length» must be 1`);
     FlexibleDB.assertion(data2.result[0].id === 1, `Parameter «data2.result[0].id» must be 1`);
+
+    const responseLogin = await fetch("http://127.0.0.1:9090", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        opcode: "login",
+        parameters: [
+          "usuario1",
+          null,
+          "123456",
+        ],
+      })
+    });
+
+    const login1 = await responseLogin.json();
+
+    const sessionToken = login1.result;
+
+    const response3 = await fetch("http://127.0.0.1:9090", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        opcode: "updateOne",
+        authentication: sessionToken,
+        parameters: [
+          "Grupo",
+          1,
+          { nombre: "Otro nombre inventado" }
+        ],
+      })
+    });
+
+    const data3 = await response3.json();
+
+    FlexibleDB.assertion(data3.opcode === "updateOne", `Parameter «data3.opcode» must be 'updateOne'`);
 
     server.stop();
     // console.log(5);

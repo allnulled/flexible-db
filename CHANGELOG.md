@@ -1,5 +1,13 @@
 # CHANGELOG
 
+# Sobre la versión 4.
+
+## Versión 3.0.1
+
+- Retirada de API del `selectMany` con capacidad de expandir datos:
+   - Rompe la separación por tablas necesaria para el auth
+- Soporte para `server.onAuthenticate` en todas las `server.operation`
+
 # Sobre la versión 3.
 
 ## Versión 3.0.1
