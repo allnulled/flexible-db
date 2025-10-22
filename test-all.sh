@@ -11,4 +11,5 @@ node test-of-complex-query.js
 node test-of-dataset-proxy.js
 node test-of-server.js
 node test-of-default.js
+node test-of-controller-language.js
 # node test-of-performance.js

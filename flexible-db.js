@@ -1221,9 +1221,10 @@
         this.$app = null;
         this.$server = null;
         this.$options = Object.assign({}, this.constructor.defaultOptions, options);
+        this.$firewall = null;
       }
 
-      async onAuthenticate(opcode, args, authenticationToken = null) {
+      async onAuthenticate(opcode, args, authenticationToken = null, request = null, response = null) {
         assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «BasicServer.onAuthenticate»`);
         assertion(typeof args === "object", `Parameter «args» must be an object on «BasicServer.onAuthenticate»`);
         if(authenticationToken !== null) {
@@ -1273,6 +1274,33 @@
             assertion(isValid, `No permission found for «${eventIds[0]}» on «onAuthenticate»`);
           }
         }
+        await this.triggerFirewall(opcode, args, authenticationToken, request, response);
+      }
+
+      getFirewall() {
+        return this.$firewall;
+      }
+
+      setFirewall(source) {
+        if(typeof global !== "undefined") {
+          if(typeof ControllerLanguage === "undefined") {
+            const path = require("path");
+            const fs = require("fs");
+            const controllerPath = path.resolve(__dirname, "controller-language.js");
+            require(controllerPath);
+          }
+        }
+        if(typeof ControllerLanguage !== "undefined") {
+          const jsCode = ControllerLanguage.parse(source)
+          const AsyncFunction = (async function() {}).constructor;
+          this.$firewall = new AsyncFunction("operation", "args", "authenticationToken", "request", "response", "model", jsCode);
+        }
+        return this;
+      }
+
+      async triggerFirewall(operation, args, authenticationToken, request, response) {
+        assertion(typeof this.$firewall === "function", `Firewall is not operative, the execution must end here`);
+        return await this.$firewall.call(this, operation, args, authenticationToken, request, response, args[0] || "none");
       }
 
       generateSessionToken(len = 10) {
@@ -1282,6 +1310,32 @@
           output += alphabet[Math.floor(Math.random() * alphabet.length)];
         }
         return output;
+      }
+
+      async authenticateRequest(request) {
+        assertion(typeof request === "object", `Parameter «request» must be an object on «authenticateRequest»`);
+        assertion(typeof request.body === "object", `Parameter «request.body» must be an object on «authenticateRequest»`);
+        assertion(typeof request.body.authentication === "string", `Parameter «request.body.authentication» must be a string on «authenticateRequest»`);
+        const sessionToken = request.body.authentication;
+        const matchedSessions = await this.$database.selectMany("Sesion", row => row.token === sessionToken);
+        if(matchedSessions.length === 0) {
+          return false;
+        }
+        const matchedUsuario = await this.$database.selectOne("Usuario", matchedSessions[0].usuario);
+        const matchedGrupos = await this.$database.selectMany("Grupo", [
+          ["usuarios", "has", matchedUsuario.id]
+        ]);
+        const matchedGrupoPermisos = matchedGrupos.map(row => row.permisos);
+        const matchedPermisos = await this.$database.selectMany("Permiso", [
+          ["id", "is in", matchedGrupoPermisos.flat()]
+        ]);
+        request.authentication = {
+          usuario: matchedUsuario,
+          sesion: matchedSessions[0],
+          grupos: matchedGrupos,
+          permisos: matchedPermisos,
+        }
+        return request.authentication;
       }
 
       async login(username, email, password) {
@@ -1325,16 +1379,26 @@
         return true;
       }
 
-      async operation(opcode, args = [], authenticationToken = null) {
+      async operation(opcode, args = [], authenticationToken = null, request = null, response = null) {
+        assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «operation» specifically «${opcode}»`);
+        assertion(Array.isArray(args), `Parameter «args» must be an array on «operation» specifically «${opcode}»`);
         let output = null;
-        await this.onAuthenticate(opcode, args, authenticationToken);
-        switch (opcode) {
+        switch(opcode) {
           case "login": {
-            output = await this.login(...args);
-            break;
+            return await this.login(...args);
           }
+        }
+        assertion(typeof authenticationToken === "string", `Parameter «authenticationToken» must be a string on «operation» specifically «${opcode}»`);
+        assertion(typeof request === "object", `Parameter «request» must be an object on «operation» specifically «${opcode}»`);
+        assertion(typeof response === "object", `Parameter «response» must be an object on «operation» specifically «${opcode}»`);
+        await this.onAuthenticate(opcode, args, authenticationToken, request, response);
+        switch (opcode) {
           case "logout": {
             output = await this.logout(...args);
+            break;
+          }
+          case "selectOne": {
+            output = await this.$database.selectOne(...args);
             break;
           }
           case "selectOne": {
@@ -1419,7 +1483,18 @@
             let opcode = "unknown";
             try {
               opcode = (request.body || {}).opcode;
-              const result = await this.operation(opcode, request.body?.parameters, request.body?.authentication);
+              assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «BasicServer.start.controller»`);
+              assertion(typeof request.body === "object", `Parameter «request.body» must be an object on «BasicServer.start.controller»`);
+              assertion(typeof request.body.parameters === "object", `Parameter «request.body.parameters» must be an object on «BasicServer.start.controller»`);
+              assertion(typeof request.body.authentication === "string", `Parameter «request.body.authentication» must be a string on «BasicServer.start.controller»`);
+              const result = await this.operation(
+                opcode,
+                request.body.parameters,
+                request.body.authentication,
+                request,
+                response,
+                request.body.parameters,
+              );
               return response.json({
                 opcode: opcode,
                 status: 200,
@@ -1427,7 +1502,7 @@
                 parameters: {
                   headers: request.headers,
                   query: request.query,
-                  body: request.body,
+                  body: JSON.stringify(request.body).length,
                 },
                 result: result || null,
                 error: false,
@@ -1441,7 +1516,7 @@
                 parameters: {
                   headers: request.headers,
                   query: request.query,
-                  body: request.body,
+                  body: JSON.stringify(request.body).length,
                 },
                 result: null,
                 error: {

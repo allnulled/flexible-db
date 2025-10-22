@@ -8,6 +8,12 @@
    - Rompe la separación por tablas necesaria para el auth
 - Soporte para `server.onAuthenticate` en todas las `server.operation`
 
+## Versión 4.0.2
+
+- soporte para `setFirewall`
+- soporte para `ControllerLanguage.parse`
+
+
 # Sobre la versión 3.
 
 ## Versión 3.0.1

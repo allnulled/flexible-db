@@ -1,0 +1,54 @@
+define block authentication {
+    start process authentication {
+        always {{ /* }}
+        always {{ console.log("url", request.originalUrl); }}
+        always {{ console.log("operation", operation); }}
+        always {{ console.log("model", model); }}
+        always {{ console.log("args", args); }}
+        always {{ console.log("authenticationToken", authenticationToken); }}
+        always {{ console.log("authentication", authentication); }}
+        always {{ */ }}
+        if not authentication then throw {{ new Error("The request requires authentication at this sensible point [52684251]") }}
+    }
+}
+
+define block authorization {
+    start process authorization {
+        create permissions as {{ authentication.permisos.map(it => it.operacion) }}
+        always {{ // console.log("permissions", permissions) }}
+        create hasOperationPermission as {{ permissions.indexOf("server." + operation) !== -1 }}
+        if hasOperationPermission then break process authorization
+        throw {{ new Error("The request requires specific privilege «server." + operation + "» at this sensible point [12324688282]") }}
+    }
+}
+
+define block basic_auth_steps {
+    create authentication as {{ await this.authenticateRequest(request) }}
+    follow block authentication
+    follow block authorization
+}
+
+event on 
+  operation
+    "addTable"
+    "addColumn"
+    "renameTable"
+    "renameColumn"
+    "dropTable"
+    "dropColumn"
+    "setSchema"
+  then follow block basic_auth_steps
+
+event on
+  model
+    "Usuario"
+    "Grupo"
+    "Sesion"
+  operation
+    "insertOne"
+    "insertMany"
+    "updateOne"
+    "updateMany"
+    "deleteOne"
+    "deleteMany"
+  then follow block basic_auth_steps

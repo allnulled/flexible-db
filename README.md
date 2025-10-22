@@ -75,6 +75,7 @@ npm i -s @allnulled/flexible-db
 - Soporta una API para desplegar servidores HTTP:
    - `server = db.createServer(port:Integer):BasicServer`
    - `await server.start(port:Integer = this.$port):Promise`
+   - `await server.setFirewall(firewallCode:String):BasicServer`
    - `await server.stop():Promise`
    - `server.clone():BasicServer`
    - `await server.operation(opcode:String, args:Array):any`
@@ -321,9 +322,123 @@ request.body.opcode:String = "unknown"
 request.body.parameters:Array = []
 ```
 
+#### `server.setFirewall(firewallCode:String):BasicServer`
+
+Permite establecer la lógica del firewall que se aplicará en las operaciones `server.operation`.
+
+Es necesario dominar un lenguaje intermedio para poder ponerlo bien.
+
+El fuente tiene como core esta sintaxis:
+
+```pegjs
+Controller_sentence = Event_sentence
+    / Start_process_sentence
+    / Break_process_sentence
+    / Create_sentence
+    / Assign_sentence
+    / Always_sentence
+    / Define_block_sentence
+    / Follow_block_sentence
+    / Throw_sentence
+    / If_sentence
+    / Native_expression
+```
+
+Luego para ver ejemplo completo está el fuente de las reglas del firewall básicas para cubrir las operaciones de la base de datos.
+
+```
+define block authentication {
+    start process authentication {
+        always {{ /* }}
+        always {{ console.log("url", request.originalUrl); }}
+        always {{ console.log("operation", operation); }}
+        always {{ console.log("model", model); }}
+        always {{ console.log("args", args); }}
+        always {{ console.log("authenticationToken", authenticationToken); }}
+        always {{ console.log("authentication", authentication); }}
+        always {{ */ }}
+        if not authentication then throw {{ new Error("The request requires authentication at this sensible point [52684251]") }}
+    }
+}
+
+define block authorization {
+    start process authorization {
+        create permissions as {{ authentication.permisos.map(it => it.operacion) }}
+        always {{ // console.log("permissions", permissions) }}
+        create hasOperationPermission as {{ permissions.indexOf("server." + operation) !== -1 }}
+        if hasOperationPermission then break process authorization
+        throw {{ new Error("The request requires specific privilege «server." + operation + "» at this sensible point [12324688282]") }}
+    }
+}
+
+define block basic_auth_steps {
+    create authentication as {{ await this.authenticateRequest(request) }}
+    follow block authentication
+    follow block authorization
+}
+
+event on 
+  operation
+    "addTable"
+    "addColumn"
+    "renameTable"
+    "renameColumn"
+    "dropTable"
+    "dropColumn"
+    "setSchema"
+  then follow block basic_auth_steps
+
+event on
+  model
+    "Usuario"
+    "Grupo"
+    "Sesion"
+  operation
+    "insertOne"
+    "insertMany"
+    "updateOne"
+    "updateMany"
+    "deleteOne"
+    "deleteMany"
+  then follow block basic_auth_steps
+```
+
+Esto producirá un `javascript` bastante a bajo nivel que permitirá todo el juego de eventos y lógica cruzada.
+
+Pero es muy importante aprender este lenguaje para meterse en la lógica del firewall.
+
+El ejemplo todavía no es muy completo, pero el lenguaje permite:
+
+  - crear variables con `create it as {{ 5000 + 5 }}`
+  - asignar variables con `assign it to {{ 2000 }}`
+  - llamar a código libre con `always {{ console.log("printing things") }}`
+  - condicionales con `if {{ val }} then { ... }`
+     - profundos con `else if {{ val }} then { ... }`
+     - por defecto con `else then { ... }`
+  - lanzar errores con `throw {{ new Error("Whatever") }}
+  - iniciar un proceso con `start process Process_id { ... }`
+  - romper un proceso con `break process Process_id`
+  - definir un bloque con `define block Block_id { ... }`
+     - esto sirve para definir macros en memoria
+     - no afecta al código de salida
+  - imprimir un bloque con `follow block Block_id`
+     - esto sirve para imprimir un bloque
+     - afecta al código de salida en tanto que se va a imprimir tal cual el bloque
+  - agrupar variables para expresiones booleanas
+     - tiene parámetros `(~)` para agrupar variables y/o expresiones
+     - tiene parámetros `not ~` para negar variables y/o expresiones
+     - tiene parámetros `~ and ~`  para emplear conjunción lógica entre variables y/o expresiones
+     - tiene parámetros `~ or ~`  para emplear disyunción lógica entre variables y/o expresiones
+
+Este lenguaje busca la **alta legibilidad** en las lógicas del **control de negocio**.
+
 #### `server.stop():Promise`
 
 Para el servidor que estuviera corriendo.
+
+#### `server.clone():BasicServer`
+
+Devuelve otra instancia de `BasicServer.from(...server)`.
 
 #### `server.clone():BasicServer`
 
@@ -333,12 +448,31 @@ Devuelve otra instancia de `BasicServer.from(...server)`.
 
 Ejecuta una acción contemplada en la API de `operation` pasándole los parámetros especificados.
 
-Los `opcode` válidos actualmente solo son los **nombres finales** de los **métodos** de la API. Aquí el switch cerrado de operaciones:
+Los `opcode` válidos actualmente solo son los **nombres finales** de los **métodos** de la API. Aquí el switch cerrado de operaciones del `BasicServer.operation`:
 
 ```js
-async operation(opcode, args = []) {
+async operation(opcode, args = [], authenticationToken = null, request = null, response = null) {
+  assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «operation» specifically «${opcode}»`);
+  assertion(Array.isArray(args), `Parameter «args» must be an array on «operation» specifically «${opcode}»`);
   let output = null;
   switch(opcode) {
+    case "login": {
+      return await this.login(...args);
+    }
+  }
+  assertion(typeof authenticationToken === "string", `Parameter «authenticationToken» must be a string on «operation» specifically «${opcode}»`);
+  assertion(typeof request === "object", `Parameter «request» must be an object on «operation» specifically «${opcode}»`);
+  assertion(typeof response === "object", `Parameter «response» must be an object on «operation» specifically «${opcode}»`);
+  await this.onAuthenticate(opcode, args, authenticationToken, request, response);
+  switch (opcode) {
+    case "logout": {
+      output = await this.logout(...args);
+      break;
+    }
+    case "selectOne": {
+      output = await this.$database.selectOne(...args);
+      break;
+    }
     case "selectOne": {
       output = await this.$database.selectOne(...args);
       break;

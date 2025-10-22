@@ -36,6 +36,7 @@ const main = async function () {
     Permiso: {
       nombre: { type: "string", unique: true },
       operacion: { type: "string" },
+      modelo: { type:"string" },
       descripcion: { type: "string" },
     },
     Legislacion: {
@@ -122,10 +123,10 @@ const main = async function () {
 
   Test_of_dataset_proxy: {
     const server = flexdb.createServer(9090, {
-      authentication: true
+      authentication: true,
     });
     // console.log(1);
-    await server.start();
+    await server.setFirewall(`always {{ console.log(operation, model, request.originalUrl ) }}`).start()
     // console.log(2);
     const response1 = await fetch("http://127.0.0.1:9090", {
       method: "POST",
@@ -134,12 +135,12 @@ const main = async function () {
       },
       body: JSON.stringify({
         opcode: "selectMany",
+        authentication: "fake",
         parameters: ["Grupo"],
       })
     });
     // console.log(3);
     const data1 = await response1.json();
-    // console.log(4);
     FlexibleDB.assertion(Array.isArray(data1.result), `Parameter «data1.result» must be an array here`);
     FlexibleDB.assertion(data1.result.length === 2, `Parameter «data1.result.length» must be 2 here`);
     FlexibleDB.assertion(data1.result[0].id === 1, `Parameter «data1.result[0].id» must be 1 here`);
@@ -154,6 +155,7 @@ const main = async function () {
       },
       body: JSON.stringify({
         opcode: "selectMany",
+        authentication: "fake",
         parameters: [
           "Grupo",
           [["id", "=", 1]]
@@ -173,6 +175,7 @@ const main = async function () {
       },
       body: JSON.stringify({
         opcode: "login",
+        authentication: "fake",
         parameters: [
           "usuario1",
           null,
@@ -212,6 +215,7 @@ const main = async function () {
       },
       body: JSON.stringify({
         opcode: "login",
+        authentication: "fake",
         parameters: [
           "usuario2",
           null,

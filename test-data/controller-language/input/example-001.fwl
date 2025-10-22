@@ -1,0 +1,45 @@
+define block authentication {
+    start process authentication {
+        if not authentication then throw {{ new Error("The request requires authentication at this sensible point [784392165]") }}
+    }
+}
+
+define block authorization {
+    start process authorization {
+        create permissions as {{ authentication.permisos.map(it => it.operacion) }}
+        create hasOperationPermission as {{ permissions.contains("server." + operation) }}
+        if hasOperationPermission then break process authorization
+        throw {{ new Error("The request requires specific privileges at this sensible point") }}
+    }
+}
+
+define block basic_auth_steps {
+    create authentication as {{ await server.authenticateRequest(request) }}
+    follow block authentication
+    follow block authorization
+}
+
+event on 
+  operation
+    "addTable"
+    "addColumn"
+    "renameTable"
+    "renameColumn"
+    "dropTable"
+    "dropColumn"
+    "setSchema"
+  then follow block basic_auth_steps
+
+event on
+  model
+    "Usuario"
+    "Grupo"
+    "Sesion"
+  operation
+    "insertOne"
+    "insertMany"
+    "updateOne"
+    "updateMany"
+    "deleteOne"
+    "deleteMany"
+  then follow block basic_auth_steps
