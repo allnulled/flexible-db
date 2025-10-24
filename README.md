@@ -485,7 +485,7 @@ El ejemplo todavía no es muy completo, pero el lenguaje permite:
 
 Este lenguaje busca la **alta legibilidad** en las lógicas del **control de negocio**.
 
-#### `server.triggerFirewall(operation, args, authenticationToken, request, response)`
+#### `server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`
 
 Permite hacer la llamada a la función compilada de `server.setFirewall(firewallCode:String)`.
 
