@@ -14,5 +14,6 @@ npx nodemon \
   -w 'test-of-dataset-proxy.js' \
   -w 'test-of-server.js' \
   -w 'test-of-controller-language.js' \
+  -w 'test-of-select-by-uid-and-others.js' \
   -e 'js' \
   -x 'bash test-all.sh'

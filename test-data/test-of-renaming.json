@@ -1,1 +1,1 @@
-{"ids":{"User":1},"data":{"User":{"1":{"id":1,"name":"Carlos"}}},"schema":{"User":{"name":{"type":"string"}}}}
+{"ids":{"uid":1,"User":1},"data":{"User":{"1":{"id":1,"uid":1,"name":"Carlos"}}},"schema":{"User":{"name":{"type":"string"}}}}

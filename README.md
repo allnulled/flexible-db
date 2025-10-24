@@ -42,7 +42,11 @@ npm i -s @allnulled/flexible-db
    - `db.hydrate`
    - `db.dehydrate`
 - Soporta métodos de CRUD:
- - `await db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
+   - `db.haveCommonItems(list1:Array, list2:Array): Boolean`
+   - `await db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
+   - `await db.selectByUid(uid:String): Promise<Object|null>`
+   - `await db.selectByLabel(table:String, label:String): Promise<Array>`
+   - `await db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`
    - `await db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`
    - `await db.insertOne(table:String, value:Object): Promise<Integer>`
    - `await db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`
@@ -54,30 +58,37 @@ npm i -s @allnulled/flexible-db
    - `await db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`
    - `await db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
 - Soporta una API para proxificar datasets con:
-   - `proxy = FlexibleDB.DatasetProxy.from(dataset:Array, table:String, database:FlexibleDB)`
+   - `proxy = FlexibleDB.BasicDataset.from(dataset:Array, table:String, database:FlexibleDB)`
    - `proxy.$dataset:Array`
    - `proxy.$database:FlexibleDB`
    - `proxy.$table:String`
-   - `proxy.findBySelector(selectorList:Array = []):DatasetProxy`
-   - `proxy.setDataset(dataset:Array):DatasetProxy`
-   - `proxy.setTable(table:String):DatasetProxy`
-   - `proxy.setDatabase(database:Object):DatasetProxy`
+   - `proxy.findBySelector(selectorList:Array = []):BasicDataset`
+   - `proxy.setDataset(dataset:Array):BasicDataset`
+   - `proxy.setTable(table:String):BasicDataset`
+   - `proxy.setDatabase(database:Object):BasicDataset`
    - `proxy.getDataset():any`
-   - `proxy.copy():DatasetProxy`
-   - `proxy.clone():DatasetProxy`
-   - `proxy.deduplicate():DatasetProxy`
-   - `await proxy.filter(callback:Function):Promise<DatasetProxy>`
-   - `await proxy.map(callback:Function):Promise<DatasetProxy>`
-   - `await proxy.reduce(callback:Function, original:any = []):Promise<DatasetProxy>`
-   - `await proxy.each(callback:Function):Promise<DatasetProxy>`
-   - `await proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<DatasetProxy>`
-   - `await proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<DatasetProxy>`
+   - `proxy.copy():BasicDataset`
+   - `proxy.clone():BasicDataset`
+   - `proxy.deduplicate():BasicDataset`
+   - `proxy.filterById(id:Integer):BasicDataset`
+   - `proxy.mapById(id:Integer):BasicDataset`
+   - `proxy.flat():BasicDataset`
+   - `await proxy.filter(callback:Function):Promise<BasicDataset>`
+   - `await proxy.map(callback:Function):Promise<BasicDataset>`
+   - `await proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
+   - `await proxy.each(callback:Function):Promise<BasicDataset>`
+   - `await proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
+   - `await proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`
 - Soporta una API para desplegar servidores HTTP:
    - `server = db.createServer(port:Integer):BasicServer`
-   - `await server.start(port:Integer = this.$port):Promise`
-   - `await server.setFirewall(firewallCode:String):BasicServer`
-   - `await server.stop():Promise`
    - `server.clone():BasicServer`
+   - `await server.start(port:Integer = this.$port):Promise`
+   - `await server.login(alias:String, email:String, password:String):String`
+   - `await server.logout(token:String):String`
+   - `await server.getFirewall():AsyncFunction`
+   - `await server.setFirewall(firewallCode:String):BasicServer`
+   - `await server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse):BasicServer`
+   - `server.stop():BasicServer`
    - `await server.operation(opcode:String, args:Array):any`
 
 
@@ -204,6 +215,36 @@ Devuelve un `Object` con el registro que tiene el `id` especificado o lanza erro
 
 El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en la row.
 
+#### `db.selectByUid(uid:String): Promise<Object>`
+
+Devuelve un `Object` con el registro que tiene el `uid` especificado o lanza error.
+
+El flag `withTableType` se sobreentiende como `true`.
+
+No es necesario especificar la `table` porque `uid` es universal.
+
+#### `db.selectByLabel(table:String, label:String): Promise<Array>`
+
+Devuelve un `Array` con los registros en los que aparezca `label` en las columnas con `label:true`.
+
+Buscará en todas las columnas donde `label:true` aparezca.
+
+Si la columna es tipo `string`, buscará con `===`.
+
+Si la columna es tipo `array`, buscará con `.indexOf`.
+
+#### `db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`
+
+Variante del método anterior donde se le pasa una lista de `labels` para buscar.
+
+Si la columna es tipo `string`, buscará con `labels.indexOf`.
+
+Si la columna es tipo `array`, buscará con `database.haveCommonItems`.
+
+#### `db.haveCommonItems(list1:Array, list2:Array): Boolean`
+
+Método utilitario que permite saber si algún ítem de 1 array aparece en otro.
+
 #### `db.insertOne(table:String, value:Object): Promise<Integer>`
 
 Inserta un registro y devuelve su `id`.
@@ -322,11 +363,25 @@ request.body.opcode:String = "unknown"
 request.body.parameters:Array = []
 ```
 
+#### `server.login(alias:String|null, email:String|null, password:String):Promise<String>`
+
+Permite iniciar o recuperar una sesión del sistema. Utiliza o `Usuario.alias` o `Usuario.email`, y luego `Usuario.password`.
+
+#### `server.logout(token:String):Promise<Boolean>`
+
+Permite finalizar una sesión del sistema. Utiliza un `Sesion.token`.
+
+#### `server.getFirewall():AsyncFunction`
+
+Permite acceder a la función compilada del firewall.
+
 #### `server.setFirewall(firewallCode:String):BasicServer`
 
 Permite establecer la lógica del firewall que se aplicará en las operaciones `server.operation`.
 
-Es necesario dominar un lenguaje intermedio para poder ponerlo bien.
+Este método está pensado para `node.js` y usa `require` para importar el parser del lenguaje del firewall.
+
+Es necesario dominar un pequeño lenguaje intermedio para poder establecer reglas del firewall bien.
 
 El fuente tiene como core esta sintaxis:
 
@@ -415,6 +470,7 @@ El ejemplo todavía no es muy completo, pero el lenguaje permite:
   - condicionales con `if {{ val }} then { ... }`
      - profundos con `else if {{ val }} then { ... }`
      - por defecto con `else then { ... }`
+  - los `event on` son `if` en realidad
   - lanzar errores con `throw {{ new Error("Whatever") }}
   - iniciar un proceso con `start process Process_id { ... }`
   - romper un proceso con `break process Process_id`
@@ -432,19 +488,55 @@ El ejemplo todavía no es muy completo, pero el lenguaje permite:
 
 Este lenguaje busca la **alta legibilidad** en las lógicas del **control de negocio**.
 
-#### `server.stop():Promise`
+#### `server.triggerFirewall(operation, args, authenticationToken, request, response)`
 
-Para el servidor que estuviera corriendo.
+Permite hacer la llamada a la función compilada de `server.setFirewall(firewallCode:String)`.
+
+La función inyecta los siguientes parámetros:
+
+- `operation:String`: el método que se va a utilizar en esta llamada
+- `args:Array`: los parámetros que se le pasan al método de `operation` en formato `metodo(...parametros)`, por eso siempre es array.
+- `authenticationToken:String`: el token de sesión
+- `request:ExpressRequest`: la petición de `express`
+- `response:ExpressResponse`: la response de `express`
+- `model:String`: en principio es `args[0]` que coincide en muchas con el `model` pero dependerá de `operation` si este argumento tiene sentido o es un valor no relevante, porque no siempre `args[0]` es el modelo.
+
+Esto significa que en el script que ponemos en `server.setFirewall(source)` existen por lo menos estos parametros inyectados en el espacio de nombres de la `AsyncFunction`.
+
+#### `server.stop():BasicServer`
+
+Permite parar el servidor que estuviera corriendo y encadenar otros métodos.
 
 #### `server.clone():BasicServer`
 
 Devuelve otra instancia de `BasicServer.from(...server)`.
 
-#### `server.clone():BasicServer`
+#### `server.authenticateRequest(request):Promise<Object|Boolean>`
 
-Devuelve otra instancia de `BasicServer.from(...server)`.
+Devuelve un objeto de autentificación. Tiene:
 
-#### `server.operation(opcode:String, args:Array):any`
+- `usuario:Object`
+- `grupos:Array`
+- `permisos:Array`
+- `sesion:Object`
+
+Si no ha sido posible, devuelve un booleano `false`,
+
+#### `server.generateSessionToken():String`
+
+Método utilitario para generar tokens de sesión.
+
+#### `server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null):String`
+
+Método usado internamente en `server.operation` para autentificar las peticiones.
+
+Principalmente, lo que este método hace es llamar al firewall con `server.triggerFirewall(...)`.
+
+Este método es llamado nada más iniciar `server.operation` si se han validado los parámetros.
+
+Esta aparte para que se pueda sobreescribir con una clase nueva si se quiere.
+
+#### `server.operation(opcode:String, args:Array):Promise<any>`
 
 Ejecuta una acción contemplada en la API de `operation` pasándole los parámetros especificados.
 
@@ -612,11 +704,11 @@ switch(op) {
 }
 ```
 
-#### `proxy = db.proxifyDataset(dataset:Array, table:String = null)`
+#### `proxy = db.createDataset(dataset:Array, table:String = null)`
 
-Crea una instancia de `new FlexibleDB.DatasetProxy(dataset, table, db)` sobreentendiendo la `db` propia.
+Crea una instancia de `new FlexibleDB.BasicDataset(dataset, table, db)` sobreentendiendo la `db` propia.
 
-A continuación se expone la interfaz de `FlexibleDB.DatasetProxy` mediante la instancia `proxy`.
+A continuación se expone la interfaz de `FlexibleDB.BasicDataset` mediante la instancia `proxy`.
 
 #### `proxy.$dataset:Array`
 
@@ -630,19 +722,19 @@ La `database` que se está usando para tipos.
 
 La `table` que se sobreentiende como tipo del `dataset`.
 
-#### `proxy.findBySelector(selectorList:Array = []):DatasetProxy`
+#### `proxy.findBySelector(selectorList:Array = []):BasicDataset`
 
 Permite cambiar el dataset con una subselección interna y encadenar otros métodos.
 
-#### `proxy.setDataset(dataset:Array):DatasetProxy`
+#### `proxy.setDataset(dataset:Array):BasicDataset`
 
 Permite cambiar el dataset y encadenar otros métodos.
 
-#### `proxy.setTable(table:String):DatasetProxy`
+#### `proxy.setTable(table:String):BasicDataset`
 
 Permite cambiar la tabla del dataset y encadenar otros métodos.
 
-#### `proxy.setDatabase(database:Object):DatasetProxy`
+#### `proxy.setDatabase(database:Object):BasicDataset`
 
 Permite cambiar la base de datos del dataset y encadenar otros métodos.
 
@@ -650,21 +742,34 @@ Permite cambiar la base de datos del dataset y encadenar otros métodos.
 
 Permite obtener el dataset propiamente.
 
-#### `proxy.copy():DatasetProxy`
+#### `proxy.copy():BasicDataset`
 
 Permite hacer una copia JSON (con `stringify` y `parse`) del dataset y encadenar otros métodos.
 
-#### `proxy.clone():DatasetProxy`
+#### `proxy.clone():BasicDataset`
 
-Permite hacer un clon del `DatasetProxy` y encadenar otros métodos.
+Permite hacer un clon del `BasicDataset` y encadenar otros métodos.
 
 Es útil para iterar datos de un subset o al menos una copia diferente de proxy.
 
-#### `proxy.deduplicate():DatasetProxy`
+#### `proxy.deduplicate():BasicDataset`
 
 Permite desduplicar un conjunto de datos. Utiliza el `row.id` y si no lo encuentra, el `row` directamente.
 
-#### `async proxy.filter(callback:Function):Promise<DatasetProxy>`
+
+#### `proxy.filterById(id:String):BasicDataset`
+
+Permite cambiar el `this.$dataset` aplicando un `filter` por una columna concreta especificada y encadenar otros métodos.
+
+#### `proxy.mapById(id:String):BasicDataset`
+
+Permite cambiar el `this.$dataset` aplicando un `map` por una columna concreta especificada y encadenar otros métodos.
+
+#### `proxy.flat():BasicDataset`
+
+Permite cambiar el `this.$dataset` aplicando un `flat` que es que si una row es 1 array, la junta como ítems no como array con las otras rows, y encadenar otros métodos.
+
+#### `async proxy.filter(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `filter` asíncronamente para operar sobre el dataset.
 
@@ -672,7 +777,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.filter`.
 
-#### `async proxy.map(callback:Function):Promise<DatasetProxy>`
+#### `async proxy.map(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `map` asíncronamente para operar sobre el dataset.
 
@@ -680,7 +785,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.map`.
 
-#### `async proxy.reduce(callback:Function, original:any = []):Promise<DatasetProxy>`
+#### `async proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
 
 Permite hacer `reduce` asíncronamente para operar sobre el dataset.
 
@@ -688,7 +793,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.reduce`.
 
-#### `async proxy.each(callback:Function):Promise<DatasetProxy>`
+#### `async proxy.each(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `each` asíncronamente para operar sobre el dataset.
 
@@ -696,7 +801,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.each`.
 
-#### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<DatasetProxy>`
+#### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 
 Permite expandir registros del dataset con la database.
 
@@ -704,7 +809,7 @@ Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(sourceTable,
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### `async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<DatasetProxy>`
+#### `async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`
 
 Permite adjuntar registros del dataset con la database.
 

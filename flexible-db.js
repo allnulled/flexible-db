@@ -91,7 +91,7 @@
 
     constructor(options = {}) {
       this.$options = Object.assign({}, this.constructor.defaultOptions, options);
-      this.$ids = {};
+      this.$ids = {uid:0};
       this.$data = {};
       this.$schema = false;
       if (typeof global !== "undefined") {
@@ -110,6 +110,11 @@
       if (!(table in this.$data)) {
         this.$data[table] = {};
       }
+    }
+
+    consumeUid() {
+      this.trace("consumeUid");
+      return ++this.$ids.uid;
     }
 
     consumeIdOf(table) {
@@ -244,6 +249,8 @@
       for (let indexProperties = 0; indexProperties < properties.length; indexProperties++) {
         const propertyId = properties[indexProperties];
         if (propertyId === "id") {
+          continue Iterating_properties_of_value;
+        } else if (propertyId === "uid") {
           continue Iterating_properties_of_value;
         }
         assertion(propertyId in tableMetadata, `Property «${propertyId}» must be a known column by the table in the schema on «${contextId}»`);
@@ -500,7 +507,7 @@
 
     async reset() {
       this.trace("reset");
-      this.$ids = {};
+      this.$ids = {uid:0};
       this.$data = {};
       this.$schema = {};
       await this.triggerDatabase("reset", []);
@@ -677,6 +684,77 @@
       return filtered;
     }
 
+    async selectByUid(uid) {
+      this.trace("selectByUid");
+      const allTables = Object.keys(this.$schema);
+      for(let index=0; index<allTables.length; index++) {
+        const tableId = allTables[index];
+        const allMatches = await this.selectMany(tableId, [["uid", "=", uid]], true);
+        if(allMatches.length) {
+          return allMatches[0];
+        }
+      }
+      return null;
+    }
+
+    async selectByLabel(table, label) {
+     assertion(typeof table === "string", `Parameter «table» must be a string on «selectByLabel»`);
+     assertion(typeof label === "string", `Parameter «label» must be a string on «selectByLabel»`);
+     const columns = this.$schema[table];
+      const labelableIds = [];
+      for(let columnId in columns) {
+        const column = columns[columnId];
+        if(column.label === true) {
+          labelableIds.push(columnId);
+        }
+      }
+      return await this.selectMany(table, row => {
+        for(let indexLabel=0; indexLabel<labelableIds.length; indexLabel++) {
+          const labelableId = labelableIds[indexLabel];
+          const labelableColumn = row[labelableId];
+          if(typeof labelableColumn === "string") {
+            if(label === labelableColumn) {
+              return true;
+            }
+          } else if(Array.isArray(labelableColumn)) {
+            if(labelableColumn.indexOf(label) !== -1) {
+              return true;
+            }
+          }
+        }
+      });
+    }
+
+    async selectByLabels(table, labels = []) {
+      assertion(typeof table === "string", `Parameter «table» must be a string on «selectByLabels»`);
+      assertion(Array.isArray(labels), `Parameter «labels» must be an array on «selectByLabels»`);
+      assertion(table in this.$schema, `Parameter «table» must be a valid table of «db.$schema» on «selectByLabels»`);
+      const columns = this.$schema[table];
+      const labelableIds = [];
+      for(let columnId in columns) {
+        const column = columns[columnId];
+        if(column.label === true) {
+          labelableIds.push(columnId);
+        }
+      }
+      return await this.selectMany(table, row => {
+        for(let indexLabel=0; indexLabel<labelableIds.length; indexLabel++) {
+          const labelableId = labelableIds[indexLabel];
+          const labelableColumn = row[labelableId];
+          if(typeof labelableColumn === "string") {
+            if(labels.indexOf(labelableColumn) !== -1) {
+              return true;
+            }
+          } else if(Array.isArray(labelableColumn)) {
+            const haveCommon = this.createDataset(labelableColumn).hasAnyOf(labels);
+            if(haveCommon) {
+              return true;
+            }
+          }
+        }
+      });
+    }
+
     async insertOne(table, value) {
       this.trace("insertOne");
       await this.$options.onLock(this);
@@ -691,7 +769,8 @@
         }
         this.ensureTable(table);
         const newId = this.consumeIdOf(table);
-        this.$data[table][newId] = { id: newId, ...value };
+        const newUid = this.consumeUid();
+        this.$data[table][newId] = { ...value, id: newId, uid: newUid };
         await this.triggerDatabase("insertOne", [table, value]);
         await this.persistDatabase();
         return newId;
@@ -722,7 +801,8 @@
         for (let indexValues = 0; indexValues < values.length; indexValues++) {
           const value = values[indexValues];
           const newId = this.consumeIdOf(table);
-          this.$data[table][newId] = { id: newId, ...value };
+          const newUid = this.consumeUid();
+          this.$data[table][newId] = { ...value, id: newId, uid: newUid };
           newIds.push(newId);
         }
         await this.triggerDatabase("insertMany", [table, values]);
@@ -744,6 +824,7 @@
           assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateOne»");
           assertion(typeof id === "number", "Parameter «id» must be a number on «updateOne»");
           assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateOne»");
+          assertion(typeof properties.uid === "undefined", "Parameter «properties.uid» must be undefined on «updateOne»");
         }
         Updated_value_validation: {
           this.validateProperties(table, properties, "updateOne");
@@ -770,6 +851,7 @@
           assertion(Object.keys(this.$schema).indexOf(table) !== -1, "Parameter «table» must be a known table on «updateMany»");
           assertion(typeof filter === "function", "Parameter «filter» must be a function on «updateMany»");
           assertion(typeof properties === "object", "Parameter «properties» must be an object on «updateMany»");
+          assertion(typeof properties.uid === "undefined", "Parameter «properties.uid» must be undefined on «updateMany»");
         }
         Updated_value_validation: {
           this.validateProperties(table, properties, "updateMany");
@@ -995,9 +1077,13 @@
 
   };
 
-  const FlexibleDBProxiesLayer = class extends FlexibleDBCrudLayer {
+  const FlexibleDBDatasetApiLayer = class extends FlexibleDBCrudLayer {
 
-    static DatasetProxy = class {
+    createDataset(dataset, table) {
+      return new this.constructor.BasicDataset(dataset, table, this);
+    }
+
+    static BasicDataset = class {
 
       static from(...args) {
         return new this(...args);
@@ -1009,12 +1095,20 @@
         this.$database = database;
       }
 
+      static hasAnyOf(a, b) {
+        return a.some(x => b.includes(x));
+      }
+
+      hasAnyOf(b) {
+        return this.constructor.hasAnyOf(this.$dataset, b);
+      }
+
       findBySelector(selectorList = []) {
         // Si el selector está vacío o sólo tiene "*", devuelve el dataset completo
-        assertion(Array.isArray(selectorList), `Parameter «selectorList» must be an array on «DatasetProxy.findBySelector»`);
+        assertion(Array.isArray(selectorList), `Parameter «selectorList» must be an array on «BasicDataset.findBySelector»`);
         for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
           const selectorItem = selectorList[indexSelector];
-          assertion(typeof selectorItem === "string", `Parameter «selectorList[${indexSelector}]» must be a string on «DatasetProxy.findBySelector»`);
+          assertion(typeof selectorItem === "string", `Parameter «selectorList[${indexSelector}]» must be a string on «BasicDataset.findBySelector»`);
         }
         if ((selectorList.length === 0) || (selectorList.length === 1 && selectorList[0] === "*")) {
           return this;
@@ -1148,6 +1242,7 @@
       }
 
       flat() {
+        assertion(Array.isArray(this.$dataset), `Parameter «this.$dataset» must be an array on «flat»`);
         this.$dataset = this.$dataset.flat();
         return this;
       }
@@ -1195,15 +1290,15 @@
         return this;
       }
 
-    };
-
-    proxifyDataset(dataset, table) {
-      return new this.constructor.DatasetProxy(dataset, table, this);
     }
 
   };
 
-  const FlexibleDBServersLayer = class extends FlexibleDBProxiesLayer {
+  const FlexibleDBServersLayer = class extends FlexibleDBDatasetApiLayer {
+
+    createServer(port, options) {
+      return this.constructor.BasicServer.from(port, this, options);
+    }
 
     static BasicServer = class {
 
@@ -1253,7 +1348,7 @@
             await this.$database.expandRecords("Grupo", dataset1[0].grupos, {
               permisos: true,
             });
-            const proxy1 = await this.$database.proxifyDataset(dataset1, "Usuario");
+            const proxy1 = await this.$database.createDataset(dataset1, "Usuario");
             const proxyOperaciones = proxy1.findBySelector(["grupos", "permisos"]).flat().deduplicate().mapById("operacion");
             const allOperaciones = proxyOperaciones.getDataset();
             const serverEvent = "server." + opcode;
@@ -1546,10 +1641,6 @@
         return this;
       }
 
-    }
-
-    createServer(port, options) {
-      return this.constructor.BasicServer.from(port, this, options);
     }
 
   };

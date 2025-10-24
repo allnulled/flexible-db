@@ -2,17 +2,40 @@
 
 # Sobre la versión 4.
 
-## Versión 4.0.1
+## Versión 4.0.4
 
-- Retirada de API del `selectMany` con capacidad de expandir datos:
-   - Rompe la separación por tablas necesaria para el auth
-- Soporte para `server.onAuthenticate` en todas las `server.operation`
+- [x] Homogeneizar las 2 APIs:
+   - [x] `BasicServer` - `createServer`
+   - [x] `BasicDataset` - `createDataset` en lugar de `proxifyDataset`
+- [x] `selectByUid`
+   - [x] el método de buscar en todas las tablas, todos los recursos
+   - [x] el selector en el árbol JSON de `$ids.uid` queda reservado como nombre de tabla genérica.
+   - [x] el método de `database.consumeUid()`
+- [x] `selectByLabel(label)` - de la propiedad de columna `{label: true}`
+   - [x] donde `label` puede ser un `string`
+      - [x] y luego la columna puede ser un tipo `string` y la comprobación sería `columna === label`
+      - [x] y luego la columna puede ser un tipo `array` y la comprobación sería `columna.indexOf(label) !== -1`
+- [x] `selectByLabels(labels)`
+   - [x] donde `labels` puede ser un `array<string>`:
+      - [x] y luego la columna puede ser un tipo `string` y la comprobación sería `label.indexOf(columna) !== -1`
+      - [x] y luego la columna puede ser un tipo `array` y la comprobación sería `database.createDataset(label).hasAnyOf(columna)`
 
 ## Versión 4.0.2
 
 - soporte para `setFirewall`
 - soporte para `ControllerLanguage.parse`
 
+## Versión 4.0.1
+
+- Retirada de API del `selectMany` con capacidad de expandir datos:
+   - Rompe la separación por tablas necesaria para el auth
+- Soporte para `server.onAuthenticate` en todas las `server.operation`
+
+----
+
+Anterior notación:
+
+----
 
 # Sobre la versión 3.
 
@@ -54,8 +77,8 @@
 
 ## Versión 3.0.14
 
-- Soporte para `db.proxifyDatabaset(dataset, table)`
-- Soporte para interfaz de `FlexibleDB.DatasetProxy`
+- Soporte para `db.proxifyDataset(dataset, table)`
+- Soporte para interfaz de `FlexibleDB.BasicDataset`
 
 ## Versión 3.0.15
 

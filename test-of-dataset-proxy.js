@@ -83,7 +83,7 @@ const main = async function () {
   await flexdb.attachRecords("Legislacion", "gruposAdoptivos", "Grupo", "legislaciones", dataset1);
 
   Test_of_dataset_proxy: {
-    const proxy1 = flexdb.proxifyDataset(dataset1, "Legislacion");
+    const proxy1 = flexdb.createDataset(dataset1, "Legislacion");
     const creadores = proxy1.clone().findBySelector(["*", "creador"]).deduplicate().getDataset();
     const creadoresPaises = proxy1.clone().findBySelector(["*", "creador", "*", "pais"]).deduplicate().getDataset();
     FlexibleDB.assertion(typeof creadores === "object", `Parameter «creadores» must be object here`);
