@@ -91,7 +91,7 @@
 
     constructor(options = {}) {
       this.$options = Object.assign({}, this.constructor.defaultOptions, options);
-      this.$ids = {uid:0};
+      this.$ids = { uid: 0 };
       this.$data = {};
       this.$schema = false;
       if (typeof global !== "undefined") {
@@ -507,7 +507,7 @@
 
     async reset() {
       this.trace("reset");
-      this.$ids = {uid:0};
+      this.$ids = { uid: 0 };
       this.$data = {};
       this.$schema = {};
       await this.triggerDatabase("reset", []);
@@ -687,10 +687,10 @@
     async selectByUid(uid) {
       this.trace("selectByUid");
       const allTables = Object.keys(this.$schema);
-      for(let index=0; index<allTables.length; index++) {
+      for (let index = 0; index < allTables.length; index++) {
         const tableId = allTables[index];
         const allMatches = await this.selectMany(tableId, [["uid", "=", uid]], true);
-        if(allMatches.length) {
+        if (allMatches.length) {
           return allMatches[0];
         }
       }
@@ -698,26 +698,26 @@
     }
 
     async selectByLabel(table, label) {
-     assertion(typeof table === "string", `Parameter «table» must be a string on «selectByLabel»`);
-     assertion(typeof label === "string", `Parameter «label» must be a string on «selectByLabel»`);
-     const columns = this.$schema[table];
+      assertion(typeof table === "string", `Parameter «table» must be a string on «selectByLabel»`);
+      assertion(typeof label === "string", `Parameter «label» must be a string on «selectByLabel»`);
+      const columns = this.$schema[table];
       const labelableIds = [];
-      for(let columnId in columns) {
+      for (let columnId in columns) {
         const column = columns[columnId];
-        if(column.label === true) {
+        if (column.label === true) {
           labelableIds.push(columnId);
         }
       }
       return await this.selectMany(table, row => {
-        for(let indexLabel=0; indexLabel<labelableIds.length; indexLabel++) {
+        for (let indexLabel = 0; indexLabel < labelableIds.length; indexLabel++) {
           const labelableId = labelableIds[indexLabel];
           const labelableColumn = row[labelableId];
-          if(typeof labelableColumn === "string") {
-            if(label === labelableColumn) {
+          if (typeof labelableColumn === "string") {
+            if (label === labelableColumn) {
               return true;
             }
-          } else if(Array.isArray(labelableColumn)) {
-            if(labelableColumn.indexOf(label) !== -1) {
+          } else if (Array.isArray(labelableColumn)) {
+            if (labelableColumn.indexOf(label) !== -1) {
               return true;
             }
           }
@@ -731,23 +731,23 @@
       assertion(table in this.$schema, `Parameter «table» must be a valid table of «db.$schema» on «selectByLabels»`);
       const columns = this.$schema[table];
       const labelableIds = [];
-      for(let columnId in columns) {
+      for (let columnId in columns) {
         const column = columns[columnId];
-        if(column.label === true) {
+        if (column.label === true) {
           labelableIds.push(columnId);
         }
       }
       return await this.selectMany(table, row => {
-        for(let indexLabel=0; indexLabel<labelableIds.length; indexLabel++) {
+        for (let indexLabel = 0; indexLabel < labelableIds.length; indexLabel++) {
           const labelableId = labelableIds[indexLabel];
           const labelableColumn = row[labelableId];
-          if(typeof labelableColumn === "string") {
-            if(labels.indexOf(labelableColumn) !== -1) {
+          if (typeof labelableColumn === "string") {
+            if (labels.indexOf(labelableColumn) !== -1) {
               return true;
             }
-          } else if(Array.isArray(labelableColumn)) {
+          } else if (Array.isArray(labelableColumn)) {
             const haveCommon = this.createDataset(labelableColumn).hasAnyOf(labels);
-            if(haveCommon) {
+            if (haveCommon) {
               return true;
             }
           }
@@ -990,7 +990,7 @@
       assertion(Array.isArray(records), `Parameter «records» must be an array on «expandRecordsBySelector»`);
       assertion(typeof expandSpec === "object", `Parameter «expandSpec» must be an object on «expandRecordsBySelector»`);
       let secondSet = records;
-      for(let index=0; index<selector.length; index++) {
+      for (let index = 0; index < selector.length; index++) {
         const selectorItem = selector[index];
         secondSet = secondSet[selectorItem];
       }
@@ -1103,7 +1103,7 @@
         return this.constructor.hasAnyOf(this.$dataset, b);
       }
 
-      findBySelector(selectorList = []) {
+      findBySelectorPrevious(selectorList = []) {
         // Si el selector está vacío o sólo tiene "*", devuelve el dataset completo
         assertion(Array.isArray(selectorList), `Parameter «selectorList» must be an array on «BasicDataset.findBySelector»`);
         for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
@@ -1117,7 +1117,11 @@
         for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
           const selectorItem = selectorList[indexSelector];
           if (selectorItem === "*") {
-            output = output;
+            if (Array.isArray(output)) {
+              output = output;
+            } else if (typeof output === "object") {
+              output = Object.values(output);
+            }
           } else {
             let requiresFlat = false;
             output = output.map((row) => {
@@ -1128,6 +1132,68 @@
             });
             if (requiresFlat) {
               output = output.flat();
+            }
+          }
+        }
+        this.$dataset = output;
+        return this;
+      }
+
+      findBySelector(selectorList = []) {
+        // Nuevo: modo de operación basado en forma del dataset
+        let mode = Array.isArray(this.$dataset) ? "rows" : "columns";
+        let output = this.$dataset;
+        // Caso selector vacío o ["*"]
+        if (selectorList.length === 0 || (selectorList.length === 1 && selectorList[0] === "*")) {
+          return this;
+        }
+        const rowsToColumns = function (rows) {
+          const columns = {};
+          for (const row of rows) {
+            if (typeof row === "object" && row !== null) {
+              for (const key of Object.keys(row)) {
+                if (!columns[key]) columns[key] = [];
+                columns[key].push(row[key]);
+              }
+            }
+          }
+          return columns;
+        };
+        for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
+          const selectorItem = selectorList[indexSelector];
+          if (selectorItem === "*") {
+            if (mode === "rows") {
+              // Si viene otro "*" luego, cambiar a modo columnas
+              const next = selectorList[indexSelector + 1];
+              if (next === "*") {
+                output = rowsToColumns(output);
+                mode = "columns";
+              }
+              // Si no hay siguiente "*", no se modifica
+            } else if (mode === "columns") {
+              // "*" en columnas mantiene columnas tal como están
+              output = output;
+            }
+          } else {
+            // Selector por clave
+            if (mode === "rows") {
+              let requiresFlat = false;
+              output = output.map((row) => {
+                if (Array.isArray(row[selectorItem])) {
+                  requiresFlat = true;
+                }
+                return row[selectorItem];
+              });
+              if (requiresFlat) {
+                output = output.flat();
+              }
+              mode = "rows"; // mantiene orientación filas
+            } else if (mode === "columns") {
+              output = output[selectorItem];
+              // Si una única columna, vuelve a orientación filas
+              if (Array.isArray(output)) {
+                mode = "rows";
+              }
             }
           }
         }
@@ -1322,7 +1388,7 @@
       async onAuthenticate(opcode, args, authenticationToken = null, request = null, response = null) {
         assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «BasicServer.onAuthenticate»`);
         assertion(typeof args === "object", `Parameter «args» must be an object on «BasicServer.onAuthenticate»`);
-        if(authenticationToken !== null) {
+        if (authenticationToken !== null) {
           assertion(typeof authenticationToken === "string", `Parameter «authenticationToken» must be a string on «BasicServer.onAuthenticate»`);
         }
         Authentication_process: {
@@ -1338,7 +1404,7 @@
             assertion(authenticationToken !== null, `Authentication cannot be null due to sensible table «${table}» on «BasicServer.onAuthenticate»`);
           }
           On_sensible_context:
-          if(isSensibleOperation || isSensibleTable) {
+          if (isSensibleOperation || isSensibleTable) {
             const openedSessions = await this.$database.selectMany("Sesion", [["token", "=", authenticationToken]]);
             assertion(openedSessions.length !== 0, `No opened sessions with token provided on sensible context`);
             const dataset1 = await this.$database.selectMany("Usuario", [
@@ -1355,13 +1421,13 @@
             const eventIds = [serverEvent];
             const subevents = eventIds[0].split(".");
             let isValid = allOperaciones.indexOf(eventIds[0]) !== -1;
-            if(!isValid) {
+            if (!isValid) {
               Iterate_subevents:
-              for(let index=0; index<subevents.length; index++) {
+              for (let index = 0; index < subevents.length; index++) {
                 const omitted = subevents.pop();
                 const subevent = subevents.concat(["*"]).join(".");
                 isValid = allOperaciones.indexOf(subevent) !== -1;
-                if(isValid) {
+                if (isValid) {
                   break Iterate_subevents;
                 }
               }
@@ -1377,17 +1443,17 @@
       }
 
       setFirewall(source) {
-        if(typeof global !== "undefined") {
-          if(typeof ControllerLanguage === "undefined") {
+        if (typeof global !== "undefined") {
+          if (typeof ControllerLanguage === "undefined") {
             const path = require("path");
             const fs = require("fs");
             const controllerPath = path.resolve(__dirname, "controller-language.js");
             require(controllerPath);
           }
         }
-        if(typeof ControllerLanguage !== "undefined") {
+        if (typeof ControllerLanguage !== "undefined") {
           const jsCode = ControllerLanguage.parse(source)
-          const AsyncFunction = (async function() {}).constructor;
+          const AsyncFunction = (async function () { }).constructor;
           this.$firewall = new AsyncFunction("operation", "args", "authenticationToken", "request", "response", "model", jsCode);
         }
         return this;
@@ -1401,7 +1467,7 @@
       generateSessionToken(len = 10) {
         let alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
         let output = "";
-        while(output.length < len) {
+        while (output.length < len) {
           output += alphabet[Math.floor(Math.random() * alphabet.length)];
         }
         return output;
@@ -1413,7 +1479,7 @@
         assertion(typeof request.body.authentication === "string", `Parameter «request.body.authentication» must be a string on «authenticateRequest»`);
         const sessionToken = request.body.authentication;
         const matchedSessions = await this.$database.selectMany("Sesion", row => row.token === sessionToken);
-        if(matchedSessions.length === 0) {
+        if (matchedSessions.length === 0) {
           return false;
         }
         const matchedUsuario = await this.$database.selectOne("Usuario", matchedSessions[0].usuario);
@@ -1436,7 +1502,7 @@
       async login(username, email, password) {
         assertion(typeof username === "string" || typeof email === "string", `Parameter «username» or «email» must be a string on «BasicServer.login»`);
         assertion(typeof password === "string", `Parameter «password» must be a string on «BasicServer.login»`);
-        const usuariosMatched = await this.$database.selectMany("Usuario", function(it) {
+        const usuariosMatched = await this.$database.selectMany("Usuario", function (it) {
           const isMatch = it.alias === username || it.email === email;
           return isMatch;
         });
@@ -1447,7 +1513,7 @@
           return row.usuario === usuarioId;
         });
         const newToken = this.generateSessionToken(100);
-        if(activeSessions.length === 0) {
+        if (activeSessions.length === 0) {
           await this.$database.insertOne("Sesion", {
             token: newToken,
             usuario: usuarioId
@@ -1478,7 +1544,7 @@
         assertion(typeof opcode === "string", `Parameter «opcode» must be a string on «operation» specifically «${opcode}»`);
         assertion(Array.isArray(args), `Parameter «args» must be an array on «operation» specifically «${opcode}»`);
         let output = null;
-        switch(opcode) {
+        switch (opcode) {
           case "login": {
             return await this.login(...args);
           }

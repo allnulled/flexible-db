@@ -723,6 +723,19 @@ La `table` que se sobreentiende como tipo del `dataset`.
 
 Permite cambiar el dataset con una subselección interna y encadenar otros métodos.
 
+El juego de selectores permite:
+
+- `["id"]`, donde:
+   - si el `$dataset` es un `array` cogerá la propiedad `id` de todos los items, la flateneará y la deduplicará.
+   - si el `$dataset` es un `object` cogerá la propiedad `id` del objeto
+- `["*", "*", "ids"]`, donde:
+   - si el `$dataset` es un `array` cogerá las propiedad `ids` de todos los items, pero no las flateneará ni deduplicará.
+   - si el `$dataset` es un `object` cogerá la propiedad `id` del objeto
+
+El doble asterisco `"*", "*"` permite pasar la vista de `rows` a `columnas`, entonces sirve para agrupar los valores por columnas.
+
+En el [`test-of-select-by-uid-and-others.js`](https://github.com/allnulled/flexible-db/blob/main/test-of-select-by-uid-and-others.js) está incluida una pequeña prueba.
+
 #### `proxy.setDataset(dataset:Array):BasicDataset`
 
 Permite cambiar el dataset y encadenar otros métodos.
@@ -981,6 +994,12 @@ const main = async function () {
   FlexibleDB.assertion(personasPorLabel1.length === 1, `Parameter «personasPorLabel1.length» must be 1 here`);
   FlexibleDB.assertion(personasPorLabel2.length === 2, `Parameter «personasPorLabel2.length» must be 2 here`);
   FlexibleDB.assertion(personasPorLabel3.length === 2, `Parameter «personasPorLabel3.length» must be 2 here`);
+  const d1 = await flexdb.createDataset(await flexdb.selectMany("Grupo"), "Grupo");
+  FlexibleDB.assertion(d1.getDataset()[0].nombre === "administración", "Parameter «d1.getDataset()[0].nombre» must be «administración»");
+  const d2 = d1.clone().findBySelector(["*","*","legislaciones"]);
+  FlexibleDB.assertion(d2.getDataset().length === 2, "Parameter «d2.getDataset().length» must be «2»");
+  FlexibleDB.assertion(d2.getDataset()[0].length === 2, "Parameter «d2.getDataset()[0].length» must be «2»");
+  FlexibleDB.assertion(d2.getDataset()[1].length === 3, "Parameter «d2.getDataset()[1].length» must be «3»");
   console.log("Completado test-of-select-by-uid-and-others-language.js");
 
 };

@@ -127,6 +127,12 @@ const main = async function () {
   FlexibleDB.assertion(personasPorLabel1.length === 1, `Parameter «personasPorLabel1.length» must be 1 here`);
   FlexibleDB.assertion(personasPorLabel2.length === 2, `Parameter «personasPorLabel2.length» must be 2 here`);
   FlexibleDB.assertion(personasPorLabel3.length === 2, `Parameter «personasPorLabel3.length» must be 2 here`);
+  const d1 = await flexdb.createDataset(await flexdb.selectMany("Grupo"), "Grupo");
+  FlexibleDB.assertion(d1.getDataset()[0].nombre === "administración", "Parameter «d1.getDataset()[0].nombre» must be «administración»");
+  const d2 = d1.clone().findBySelector(["*","*","legislaciones"]);
+  FlexibleDB.assertion(d2.getDataset().length === 2, "Parameter «d2.getDataset().length» must be «2»");
+  FlexibleDB.assertion(d2.getDataset()[0].length === 2, "Parameter «d2.getDataset()[0].length» must be «2»");
+  FlexibleDB.assertion(d2.getDataset()[1].length === 3, "Parameter «d2.getDataset()[1].length» must be «3»");
   console.log("Completado test-of-select-by-uid-and-others-language.js");
 
 };
