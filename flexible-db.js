@@ -305,7 +305,10 @@
                 continue Iterating_rows;
               }
               const rowPropertyValue = row[propertyId];
-              assertion(value[propertyId] !== rowPropertyValue, `Property «${propertyId}» must be unique but is repeated on id «${row.id}» on «${contextId}»`);
+              const hasId = ("id" in value) && (typeof value.id !== "undefined") && (value.id !== null);
+              if(!hasId) {
+                assertion(value[propertyId] !== rowPropertyValue, `Property «${propertyId}» must be unique but is repeated on id «${row.id}» on «${contextId}»`);
+              }
             }
           }
         }
@@ -1395,47 +1398,8 @@
           if (this.$options.authentication !== true) {
             break Authentication_process;
           }
-          const [table] = args;
-          const isSensibleOperation = ["insertOne", "insertMany", "updateOne", "updateMany", "deleteOne", "deleteMany", "addTable", "addColumn", "renameTable", "renameColumn", "dropTable", "dropColumn", "setSchema"].indexOf(opcode) !== -1;
-          const isSensibleTable = ["Usuario", "Sesion"].indexOf(table) !== -1;
-          if (isSensibleOperation) {
-            assertion(authenticationToken !== null, `Authentication cannot be null due to sensible operation «${opcode}» on «BasicServer.onAuthenticate»`);
-          } else if (isSensibleTable) {
-            assertion(authenticationToken !== null, `Authentication cannot be null due to sensible table «${table}» on «BasicServer.onAuthenticate»`);
-          }
-          On_sensible_context:
-          if (isSensibleOperation || isSensibleTable) {
-            const openedSessions = await this.$database.selectMany("Sesion", [["token", "=", authenticationToken]]);
-            assertion(openedSessions.length !== 0, `No opened sessions with token provided on sensible context`);
-            const dataset1 = await this.$database.selectMany("Usuario", [
-              ["id", "=", openedSessions[0].id]
-            ]);
-            await this.$database.attachRecords("Usuario", "grupos", "Grupo", "usuarios", dataset1);
-            await this.$database.expandRecords("Grupo", dataset1[0].grupos, {
-              permisos: true,
-            });
-            const proxy1 = await this.$database.createDataset(dataset1, "Usuario");
-            const proxyOperaciones = proxy1.findBySelector(["grupos", "permisos"]).flat().deduplicate().mapById("operacion");
-            const allOperaciones = proxyOperaciones.getDataset();
-            const serverEvent = "server." + opcode;
-            const eventIds = [serverEvent];
-            const subevents = eventIds[0].split(".");
-            let isValid = allOperaciones.indexOf(eventIds[0]) !== -1;
-            if (!isValid) {
-              Iterate_subevents:
-              for (let index = 0; index < subevents.length; index++) {
-                const omitted = subevents.pop();
-                const subevent = subevents.concat(["*"]).join(".");
-                isValid = allOperaciones.indexOf(subevent) !== -1;
-                if (isValid) {
-                  break Iterate_subevents;
-                }
-              }
-            }
-            assertion(isValid, `No permission found for «${eventIds[0]}» on «onAuthenticate»`);
-          }
+          await this.triggerFirewall(opcode, args, authenticationToken, request, response);
         }
-        await this.triggerFirewall(opcode, args, authenticationToken, request, response);
       }
 
       getFirewall() {
@@ -1669,7 +1633,7 @@
                 error: false,
               });
             } catch (error) {
-              console.log(error);
+              console.log("Error respondiendo la petición:", "\n", error);
               return response.json({
                 opcode: opcode,
                 status: 500,

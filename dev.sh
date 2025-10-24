@@ -1,6 +1,7 @@
 npx nodemon \
   -w 'flexible-db.js' \
   -w 'test.js' \
+  -w 'test-on-basic-auth-01.js' \
   -w 'test-on-readme.js' \
   -w 'test-of-persistence.js' \
   -w 'test-of-trigger.js' \

@@ -239,15 +239,19 @@ const main = async function () {
         parameters: [
           "Grupo",
           1,
-          { nombre: "Otro nombre inventado" }
+          { nombre: "Otro nombre inventado 2" }
         ],
       })
     });
 
     const data4 = await update1.json();
 
+    FlexibleDB.assertion(data4.error === false, "Parameter «data4.error.name» must be 'AssertionError'");
+
+    /*
     FlexibleDB.assertion(data4.error.name === "AssertionError", "Parameter «data4.error.name» must be 'AssertionError'");
     FlexibleDB.assertion(data4.error.message === "No permission found for «server.updateOne» on «onAuthenticate»", "Parameter «data4.error.message» must be '...'");
+    //*/
 
     server.stop();
     // console.log(5);

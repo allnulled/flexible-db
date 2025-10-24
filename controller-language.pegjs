@@ -10,7 +10,7 @@
         definedProcesses[item.processId] = item.then;
         return "";
       case "assign":
-        return item.source " = " + item.value + ";\n";
+        return item.source + " = " + item.value + ";\n";
       case "follow block":
         return definedProcesses[item.processId].trim() + "\n";
       case "throw":
@@ -35,8 +35,8 @@
   };
 }
 
-Controller_language = Controller_block
-Controller_block = ast:Controller_sentence* { return ast.join("") }
+Controller_language = ast:Controller_block { return ast }
+Controller_block = ast:Controller_sentence* _* { return ast.join("") }
 
 Blockpure = Controller_block
 Block = Block_1 / Block_2
