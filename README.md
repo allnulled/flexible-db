@@ -42,7 +42,6 @@ npm i -s @allnulled/flexible-db
    - `db.hydrate`
    - `db.dehydrate`
 - Soporta métodos de CRUD:
-   - `db.haveCommonItems(list1:Array, list2:Array): Boolean`
    - `await db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
    - `await db.selectByUid(uid:String): Promise<Object|null>`
    - `await db.selectByLabel(table:String, label:String): Promise<Array>`
@@ -59,6 +58,7 @@ npm i -s @allnulled/flexible-db
    - `await db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
 - Soporta una API para proxificar datasets con:
    - `proxy = FlexibleDB.BasicDataset.from(dataset:Array, table:String, database:FlexibleDB)`
+   - `proxy = db.createDataset(dataset:Array, table:String)`
    - `proxy.$dataset:Array`
    - `proxy.$database:FlexibleDB`
    - `proxy.$table:String`
@@ -73,6 +73,7 @@ npm i -s @allnulled/flexible-db
    - `proxy.filterById(id:String):BasicDataset`
    - `proxy.mapById(id:String):BasicDataset`
    - `proxy.flat():BasicDataset`
+   - `proxy.hasAnyOf(list:Array):BasicDataset`
    - `await proxy.filter(callback:Function):Promise<BasicDataset>`
    - `await proxy.map(callback:Function):Promise<BasicDataset>`
    - `await proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
@@ -239,11 +240,7 @@ Variante del método anterior donde se le pasa una lista de `labels` para buscar
 
 Si la columna es tipo `string`, buscará con `labels.indexOf`.
 
-Si la columna es tipo `array`, buscará con `database.haveCommonItems`.
-
-#### `db.haveCommonItems(list1:Array, list2:Array): Boolean`
-
-Método utilitario que permite saber si algún ítem de 1 array aparece en otro.
+Si la columna es tipo `array`, buscará con `BasicDataset.hasAnyOf`.
 
 #### `db.insertOne(table:String, value:Object): Promise<Integer>`
 
@@ -768,6 +765,14 @@ Permite cambiar el `this.$dataset` aplicando un `map` por una columna concreta e
 #### `proxy.flat():BasicDataset`
 
 Permite cambiar el `this.$dataset` aplicando un `flat` que es que si una row es 1 array, la junta como ítems no como array con las otras rows, y encadenar otros métodos.
+
+#### `proxy.hasAnyOf(list:Array):BasicDataset`
+
+Permite saber si `proxy.$dataset:Array` contiene alguno de los ítems de `list:Array`.
+
+#### `BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset`
+
+Lo mismo que la anterior pero sin sobreentender `this.$dataset` como `list1`.
 
 #### `async proxy.filter(callback:Function):Promise<BasicDataset>`
 
