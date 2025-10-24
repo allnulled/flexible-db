@@ -1000,6 +1000,10 @@ const main = async function () {
   FlexibleDB.assertion(d2.getDataset().length === 2, "Parameter «d2.getDataset().length» must be «2»");
   FlexibleDB.assertion(d2.getDataset()[0].length === 2, "Parameter «d2.getDataset()[0].length» must be «2»");
   FlexibleDB.assertion(d2.getDataset()[1].length === 3, "Parameter «d2.getDataset()[1].length» must be «3»");
+  const d3 = d1.clone().findBySelector(["*","*"]);
+  FlexibleDB.assertion(d3.getDataset().permisos.length === 2, "Parameter «d3.getDataset().permisos.length» must be «2»");
+  FlexibleDB.assertion(d3.getDataset().permisos[0].length >= 17, "Parameter «d3.getDataset().permisos[0].length» must be «17»");
+  FlexibleDB.assertion(d3.getDataset().permisos[1].length === 1, "Parameter «d3.getDataset().permisos[1].length» must be «1»");
   console.log("Completado test-of-select-by-uid-and-others-language.js");
 
 };
