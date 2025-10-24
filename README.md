@@ -730,7 +730,7 @@ El juego de selectores permite:
    - si el `$dataset` es un `object` cogerá la propiedad `id` del objeto
 - `["*", "*", "ids"]`, donde:
    - si el `$dataset` es un `array` cogerá las propiedad `ids` de todos los items, pero no las flateneará ni deduplicará.
-   - si el `$dataset` es un `object` cogerá la propiedad `id` del objeto
+   - si el `$dataset` es un `object` pasará el objeto de rows a columnas, y luego seleccionará el `ids`, pero no lo flateneará ni deduplicará.
 
 El doble asterisco `"*", "*"` permite pasar la vista de `rows` a `columnas`, entonces sirve para agrupar los valores por columnas.
 
