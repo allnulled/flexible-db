@@ -70,8 +70,8 @@ npm i -s @allnulled/flexible-db
    - `proxy.copy():BasicDataset`
    - `proxy.clone():BasicDataset`
    - `proxy.deduplicate():BasicDataset`
-   - `proxy.filterById(id:Integer):BasicDataset`
-   - `proxy.mapById(id:Integer):BasicDataset`
+   - `proxy.filterById(id:String):BasicDataset`
+   - `proxy.mapById(id:String):BasicDataset`
    - `proxy.flat():BasicDataset`
    - `await proxy.filter(callback:Function):Promise<BasicDataset>`
    - `await proxy.map(callback:Function):Promise<BasicDataset>`
