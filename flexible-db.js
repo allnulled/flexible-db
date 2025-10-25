@@ -1144,6 +1144,11 @@
 
       findBySelector(selectorList = []) {
         // Nuevo: modo de operación basado en forma del dataset
+        assertion(Array.isArray(selectorList), `Parameter «selectorList» must be an array on «BasicDataset.findBySelector»`);
+        for (let indexSelector = 0; indexSelector < selectorList.length; indexSelector++) {
+          const selectorItem = selectorList[indexSelector];
+          assertion(typeof selectorItem === "string", `Parameter «selectorList[${indexSelector}]» must be a string on «BasicDataset.findBySelector»`);
+        }
         let mode = Array.isArray(this.$dataset) ? "rows" : "columns";
         let output = this.$dataset;
         // Caso selector vacío o ["*"]
@@ -1329,6 +1334,51 @@
             console.log("(each failed, but process continues anyway.");
           }
         }
+        return this;
+      }
+
+      async modify(callback) {
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «modify»");
+        const output = await callback.call(this, this.$dataset);
+        this.$dataset = typeof output !== "undefined" ? output : this.$dataset;
+        return this;
+      }
+
+      filterSync(callback) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «filterSync»");
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «filterSync»");
+        this.$dataset = this.$dataset.filter(callback);
+        return this;
+      }
+
+      mapSync(callback) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «mapSync»");
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «mapSync»");
+        this.$dataset = this.$dataset.map(callback);
+        return this;
+      }
+
+      reduceSync(callback, output) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «reduceSync»");
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «reduceSync»");
+        this.$dataset = this.$dataset.reduce(callback, output);
+        return this;
+      }
+
+      eachSync(callback) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «reduceSync»");
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «eachSync»");
+        for(let index=0; index<this.$dataset.length; index++) {
+          const row = this.$dataset[index];
+          callback(row, index, this.$dataset);
+        }
+        return this;
+      }
+
+      modifySync(callback) {
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «modifySync»");
+        const output = callback.call(this, this.$dataset, this);
+        this.$dataset = typeof output !== "undefined" ? output : this.$dataset;
         return this;
       }
 

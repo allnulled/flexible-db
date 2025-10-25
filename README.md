@@ -74,10 +74,16 @@ npm i -s @allnulled/flexible-db
    - `proxy.mapById(id:String):BasicDataset`
    - `proxy.flat():BasicDataset`
    - `proxy.hasAnyOf(list:Array):BasicDataset`
+   - `proxy.filterSync(callback:Function):BasicDataset`
+   - `proxy.mapSync(callback:Function):BasicDataset`
+   - `proxy.reduceSync(callback:Function, original:any = []):BasicDataset`
+   - `proxy.eachSync(callback:Function):BasicDataset`
+   - `proxy.modifySync(callback:Function):BasicDataset`
    - `await proxy.filter(callback:Function):Promise<BasicDataset>`
    - `await proxy.map(callback:Function):Promise<BasicDataset>`
    - `await proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
    - `await proxy.each(callback:Function):Promise<BasicDataset>`
+   - `await proxy.modify(callback:Function):Promise<BasicDataset>`
    - `await proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
    - `await proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`
 - Soporta una API para desplegar servidores HTTP:
@@ -811,6 +817,17 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.reduce`.
 
+#### `async proxy.modify(callback:Function):Promise<BasicDataset>`
+
+Permite hacer `modify` asíncronamente para operar sobre el dataset.
+
+Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
+
+La firma del método incluye a:
+
+- `this` como el `BasicDataset`
+- `arguments[0]` como el `this.$dataset` del `BasicDataset`
+
 #### `async proxy.each(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `each` asíncronamente para operar sobre el dataset.
@@ -818,6 +835,26 @@ Permite hacer `each` asíncronamente para operar sobre el dataset.
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
 La firma contractual de la función es la típica de `Array.prototype.each`.
+
+#### `proxy.filterSync(callback:Function):BasicDataset`
+
+Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.filter` excepto porque permite encadenar otros métodos.
+
+#### `proxy.mapSync(callback:Function):BasicDataset`
+
+Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.map` excepto porque permite encadenar otros métodos.
+
+#### `proxy.reduceSync(callback:Function, original:any = []):BasicDataset`
+
+Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.reduce` excepto porque permite encadenar otros métodos.
+
+#### `proxy.eachSync(callback:Function):BasicDataset`
+
+Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.each` excepto porque permite encadenar otros métodos.
+
+#### `proxy.modifySync(callback:Function):BasicDataset`
+
+Versión síncrona del mismo método.
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 
