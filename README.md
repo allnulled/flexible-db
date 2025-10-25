@@ -2,6 +2,88 @@
 
 Base de datos basada en JavaScript.
 
+## Índice
+
+- [flexible-db](#flexible-db)
+  - [Índice](#índice)
+  - [Links](#links)
+  - [Instalación](#instalación)
+  - [Features](#features)
+  - [API](#api)
+    - [Database API](#database-api)
+      - [`db = FlexibleDB.create(options:Object): Object`](#db--flexibledbcreateoptionsobject-object)
+      - [`db.getSchema(): Object`](#dbgetschema-object)
+      - [`db.getRelationsSchema(): Object`](#dbgetrelationsschema-object)
+      - [`db.setSchema(schema:Object): void`](#dbsetschemaschemaobject-void)
+      - [`db.dehydrate(): String`](#dbdehydrate-string)
+      - [`db.hydrate(stringifiedDatabase:String): Promise<void>`](#dbhydratestringifieddatabasestring-promisevoid)
+      - [`db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`](#dbselectmanytablestring-filterfunctionarray--select_all_filter-withtabletypebooleanstring--false-promisearray)
+      - [`db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`](#dbselectonetablestring-idnumber-withtabletypeboolean--false-promiseobject)
+      - [`db.selectByUid(uid:String): Promise<Object>`](#dbselectbyuiduidstring-promiseobject)
+      - [`db.selectByLabel(table:String, label:String): Promise<Array>`](#dbselectbylabeltablestring-labelstring-promisearray)
+      - [`db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`](#dbselectbylabelstablestring-labelsarraystring-promisearray)
+      - [`db.insertOne(table:String, value:Object): Promise<Integer>`](#dbinsertonetablestring-valueobject-promiseinteger)
+      - [`db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`](#dbinsertmanytablestring-valuesarrayobject-promisearrayinteger)
+      - [`db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>`](#dbupdateonetablestring-idinteger-propertiesobject-promiseboolean)
+      - [`db.updateMany(table:String, filter:Function, properties:Object): Promise<Array<Integer>>`](#dbupdatemanytablestring-filterfunction-propertiesobject-promisearrayinteger)
+      - [`db.deleteOne(table:String, id:Integer): Promise<Boolean>`](#dbdeleteonetablestring-idinteger-promiseboolean)
+      - [`db.deleteMany(table:String, filter:Function): Promise<Array<Integer>>`](#dbdeletemanytablestring-filterfunction-promisearrayinteger)
+      - [`db.renameTable(table:String, newName:String): Promise<Boolean>`](#dbrenametabletablestring-newnamestring-promiseboolean)
+      - [`db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`](#dbrenamecolumntablestring-columnstring-newnamestring-promiseboolean)
+      - [`db.addTable(table:String): Promise<Boolean>`](#dbaddtabletablestring-promiseboolean)
+      - [`db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`](#dbaddcolumntablestring-columnstring-metadataobject-promiseboolean)
+      - [`db.dropTable(table:String): Promise<Boolean>`](#dbdroptabletablestring-promiseboolean)
+      - [`db.dropColumn(table:String, column:String): Promise<Boolean>`](#dbdropcolumntablestring-columnstring-promiseboolean)
+      - [`db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`](#dbmodifyalltablestring-modifierfunction-errorhandlerfunction--consolelog-promisearray)
+      - [`db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`](#dbexpandrecordssourcetablestring-datasetarray-expandspecobject-promisearray)
+      - [`db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`](#dbattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstring-datasetarray-promisearray)
+    - [Server API](#server-api)
+      - [`server = db.createServer(port:Integer):BasicServer`](#server--dbcreateserverportintegerbasicserver)
+      - [`server.start(port:Integer = this.$port):Promise`](#serverstartportinteger--thisportpromise)
+      - [`server.login(alias:String|null, email:String|null, password:String):Promise<String>`](#serverloginaliasstringnull-emailstringnull-passwordstringpromisestring)
+      - [`server.logout(token:String):Promise<Boolean>`](#serverlogouttokenstringpromiseboolean)
+      - [`server.getFirewall():AsyncFunction`](#servergetfirewallasyncfunction)
+      - [`server.setFirewall(firewallCode:String):BasicServer`](#serversetfirewallfirewallcodestringbasicserver)
+      - [`server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`](#servertriggerfirewalloperationstring-argsarray-authenticationtokenstring-requestexpressrequest-responseexpressresponse)
+      - [`server.stop():BasicServer`](#serverstopbasicserver)
+      - [`server.clone():BasicServer`](#serverclonebasicserver)
+      - [`server.authenticateRequest(request):Promise<Object|Boolean>`](#serverauthenticaterequestrequestpromiseobjectboolean)
+      - [`server.generateSessionToken():String`](#servergeneratesessiontokenstring)
+      - [`server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null):String`](#serveronauthenticateopcodestring-argsarray-authenticationtokenstring--null-requestexpressrequest--null-responseexpressresponse--nullstring)
+      - [`server.operation(opcode:String, args:Array):Promise<any>`](#serveroperationopcodestring-argsarraypromiseany)
+    - [Dataset API](#dataset-api)
+      - [`proxy = db.createDataset(dataset:Array, table:String = null)`](#proxy--dbcreatedatasetdatasetarray-tablestring--null)
+      - [`proxy.$dataset:Array`](#proxydatasetarray)
+      - [`proxy.$database:Object`](#proxydatabaseobject)
+      - [`proxy.$table:String`](#proxytablestring)
+      - [`proxy.findBySelector(selectorList:Array = []):BasicDataset`](#proxyfindbyselectorselectorlistarray--basicdataset)
+      - [`proxy.setDataset(dataset:Array):BasicDataset`](#proxysetdatasetdatasetarraybasicdataset)
+      - [`proxy.setTable(table:String):BasicDataset`](#proxysettabletablestringbasicdataset)
+      - [`proxy.setDatabase(database:Object):BasicDataset`](#proxysetdatabasedatabaseobjectbasicdataset)
+      - [`proxy.getDataset():any`](#proxygetdatasetany)
+      - [`proxy.copy():BasicDataset`](#proxycopybasicdataset)
+      - [`proxy.clone():BasicDataset`](#proxyclonebasicdataset)
+      - [`proxy.deduplicate():BasicDataset`](#proxydeduplicatebasicdataset)
+      - [`proxy.filterById(id:String):BasicDataset`](#proxyfilterbyididstringbasicdataset)
+      - [`proxy.mapById(id:String):BasicDataset`](#proxymapbyididstringbasicdataset)
+      - [`proxy.flat():BasicDataset`](#proxyflatbasicdataset)
+      - [`proxy.hasAnyOf(list:Array):BasicDataset`](#proxyhasanyoflistarraybasicdataset)
+      - [`BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset`](#basicdatasethasanyoflist1array-list2arraybasicdataset)
+      - [`async proxy.filter(callback:Function):Promise<BasicDataset>`](#async-proxyfiltercallbackfunctionpromisebasicdataset)
+      - [`async proxy.map(callback:Function):Promise<BasicDataset>`](#async-proxymapcallbackfunctionpromisebasicdataset)
+      - [`async proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`](#async-proxyreducecallbackfunction-originalany--promisebasicdataset)
+      - [`async proxy.modify(callback:Function):Promise<BasicDataset>`](#async-proxymodifycallbackfunctionpromisebasicdataset)
+      - [`async proxy.each(callback:Function):Promise<BasicDataset>`](#async-proxyeachcallbackfunctionpromisebasicdataset)
+      - [`proxy.filterSync(callback:Function):BasicDataset`](#proxyfiltersynccallbackfunctionbasicdataset)
+      - [`proxy.mapSync(callback:Function):BasicDataset`](#proxymapsynccallbackfunctionbasicdataset)
+      - [`proxy.reduceSync(callback:Function, original:any = []):BasicDataset`](#proxyreducesynccallbackfunction-originalany--basicdataset)
+      - [`proxy.eachSync(callback:Function):BasicDataset`](#proxyeachsynccallbackfunctionbasicdataset)
+      - [`proxy.modifySync(callback:Function):BasicDataset`](#proxymodifysynccallbackfunctionbasicdataset)
+      - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
+      - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
+  - [Tests](#tests)
+  - [Ejemplo práctico](#ejemplo-práctico)
+
 ## Links
 
 - [Página en Github](https://github.com/allnulled/flexible-db)
@@ -30,76 +112,15 @@ npm i -s @allnulled/flexible-db
    - `"object-reference"` (con integridad referencial)
    - `"array-reference"` (con integridad referencial)
 - Soporta métodos de esquema:
-   - `await db.getSchema(): Promise<Object>`
-   - `await db.setSchema(schema:Object): Promise`
-   - `await db.renameTable(table:String, newName:String): Promise<Boolean>`
-   - `await db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`
-   - `await db.addTable(table:String): Promise<Boolean>`
-   - `await db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`
-   - `await db.dropTable(table:String): Promise<Boolean>`
-   - `await db.dropColumn(table:String, column:String): Promise<Boolean>`
 - Soporta métodos de persistencia:
-   - `db.hydrate`
-   - `db.dehydrate`
 - Soporta métodos de CRUD:
-   - `await db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
-   - `await db.selectByUid(uid:String): Promise<Object|null>`
-   - `await db.selectByLabel(table:String, label:String): Promise<Array>`
-   - `await db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`
-   - `await db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>`
-   - `await db.insertOne(table:String, value:Object): Promise<Integer>`
-   - `await db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`
-   - `await db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>`
-   - `await db.updateMany(table:String, filter:Function|Array, properties:Object): Promise<Array<Integer>>`
-   - `await db.deleteOne(table:String, id:Integer): Promise<Boolean>`
-   - `await db.deleteMany(table:String, filter:Function|Array): Promise<Array<Integer>>`
-   - `await db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`
-   - `await db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`
-   - `await db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
 - Soporta una API para proxificar datasets con:
-   - `proxy = FlexibleDB.BasicDataset.from(dataset:Array, table:String, database:FlexibleDB)`
-   - `proxy = db.createDataset(dataset:Array, table:String)`
-   - `proxy.$dataset:Array`
-   - `proxy.$database:FlexibleDB`
-   - `proxy.$table:String`
-   - `proxy.findBySelector(selectorList:Array = []):BasicDataset`
-   - `proxy.setDataset(dataset:Array):BasicDataset`
-   - `proxy.setTable(table:String):BasicDataset`
-   - `proxy.setDatabase(database:Object):BasicDataset`
-   - `proxy.getDataset():any`
-   - `proxy.copy():BasicDataset`
-   - `proxy.clone():BasicDataset`
-   - `proxy.deduplicate():BasicDataset`
-   - `proxy.filterById(id:String):BasicDataset`
-   - `proxy.mapById(id:String):BasicDataset`
-   - `proxy.flat():BasicDataset`
-   - `proxy.hasAnyOf(list:Array):BasicDataset`
-   - `proxy.filterSync(callback:Function):BasicDataset`
-   - `proxy.mapSync(callback:Function):BasicDataset`
-   - `proxy.reduceSync(callback:Function, original:any = []):BasicDataset`
-   - `proxy.eachSync(callback:Function):BasicDataset`
-   - `proxy.modifySync(callback:Function):BasicDataset`
-   - `await proxy.filter(callback:Function):Promise<BasicDataset>`
-   - `await proxy.map(callback:Function):Promise<BasicDataset>`
-   - `await proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
-   - `await proxy.each(callback:Function):Promise<BasicDataset>`
-   - `await proxy.modify(callback:Function):Promise<BasicDataset>`
-   - `await proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
-   - `await proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`
 - Soporta una API para desplegar servidores HTTP:
-   - `server = db.createServer(port:Integer):BasicServer`
-   - `server.clone():BasicServer`
-   - `await server.start(port:Integer = this.$port):Promise`
-   - `await server.login(alias:String, email:String, password:String):String`
-   - `await server.logout(token:String):String`
-   - `await server.getFirewall():AsyncFunction`
-   - `await server.setFirewall(firewallCode:String):BasicServer`
-   - `await server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse):BasicServer`
-   - `server.stop():BasicServer`
-   - `await server.operation(opcode:String, args:Array):any`
 
 
 ## API
+
+### Database API
 
 #### `db = FlexibleDB.create(options:Object): Object`
 
@@ -348,6 +369,7 @@ Requiere de relaciones `array-reference` o `object-reference`, concretamente que
 - El parámetro `referredTable` indica la tabla del `db.$schema` que contiene una columna que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
 - El parámetro `referredColumn` indica la columna de `db.$schema[referredTable]` que apunta con `array-reference` o `object-reference` a la tabla de `sourceTable`.
 
+### Server API
 
 #### `server = db.createServer(port:Integer):BasicServer`
 
@@ -706,6 +728,8 @@ switch(op) {
   }
 }
 ```
+
+### Dataset API
 
 #### `proxy = db.createDataset(dataset:Array, table:String = null)`
 
