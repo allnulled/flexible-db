@@ -146,10 +146,14 @@
             assertion(this.constructor.knownTypes.indexOf(columnMetadata.type) !== -1, `Schema column type «${tableId}.${columnId}» must be a known type, this is «${this.constructor.knownTypes.join("|")}» on «setSchema»`);
             if (columnMetadata.type === "object-reference") {
               assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
-              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
+              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» on «object-reference» requires property «referredTable» to be a known table on «setSchema»`);
             } else if (columnMetadata.type === "array-reference") {
               assertion(typeof columnMetadata.referredTable === "string", `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a string on «setSchema»`);
-              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» requires property «referredTable» to be a known table on «setSchema»`);
+              assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» on «array-reference» requires property «referredTable» to be a known table on «setSchema»`);
+            }
+            Checking_tree_flag:
+            if(columnMetadata.tree === true) {
+              assertion(columnMetadata.referredTable === tableId, `Schema column type «${tableId}.${columnId}» required property «referredTable» to be the same «${tableId}» in case you want to keep {tree: true} on «setSchema»`);
             }
           }
         }
@@ -1725,7 +1729,129 @@
 
   };
 
-  const FlexibleDB = class extends FlexibleDBServersLayer {
+  const FlexibleDBQueryLayer = class extends FlexibleDBServersLayer {
+
+    static BasicQuery = class {
+
+      static from(...args) {
+        return new this(...args);
+      }
+
+      constructor(overrider = {}) {
+        this.$dataset = null;
+        Object.assign(this, overrider);
+      }
+
+      steps = [
+        "onStart",
+        "onReset",
+        "onFetch",
+        "onValidate",
+        "onPrepare",
+        "onQuery",
+        "onConfirm",
+        "onTransform",
+        "onCommit",
+        "onEnd",
+      ];
+
+      onStart() {}
+      onReset() {}
+      onFetch() {}
+      onValidate() {}
+      onPrepare() {}
+      onQuery() {}
+      onConfirm() {}
+      onTransform() {}
+      onCommit() {}
+      onEnd() {}
+
+      onError(error, step) {
+        console.error(`Error in step «${step}»`, error);
+        throw error;
+      }
+
+      async run() {
+        for(let indexStep=0; indexStep<this.steps.length; indexStep++) {
+          const step = this.steps[indexStep];
+          let callback = undefined;
+          if(typeof this[step] === "string") {
+            callback = this.wrapAsAsyncFunction(this[step]);
+          } else if(typeof this[step] === "function") {
+            callback = this[step];
+          } else {
+            callback = () => {};
+          }
+          try {
+            await callback.call(this);
+          } catch (error) {
+            let handler = undefined;
+            if(typeof this.onError === "string") {
+              handler = this.wrapAsAsyncFunction(this.onError, ["error", "step"]);
+            } else if(typeof this.onError === "function") {
+              handler = this.onError;
+            } else {
+              handler = () => {};
+            }
+            await handler.call(this, error, step);
+          }
+        }
+      }
+
+      wrapAsAsyncFunction(code, parameters = []) {
+        const AsyncFunction = (async function() {}).constructor;
+        const callback = new AsyncFunction(...parameters, code);
+        return callback;
+      }
+
+    }
+
+  };
+
+  const FlexibleDBTreesLayer = class extends FlexibleDBQueryLayer {
+
+    static BasicTree = class {
+
+      static from(...args) {
+        return new this(...args);
+      }
+
+      constructor(table, column, database) {
+        assertion(typeof table === "string", "Parameter «table» must be a string on «BasicTree.constructor»");
+        assertion(typeof column === "string", "Parameter «column» must be a string on «BasicTree.constructor»");
+        assertion(typeof database === "object", "Parameter «database» must be an object on «BasicTree.constructor»");
+        assertion(table in database.$schema, "Parameter «table» must be a table in «database.$schema» on «BasicTree.constructor»");
+        assertion(column in database.$schema[table], "Parameter «column» must be a column in «database.$schema[table]» on «BasicTree.constructor»");
+        assertion(database.$schema[table][column].tree === true, "Parameter «tree» must be a true in «database.$schema[table][column]» on «BasicTree.constructor»");
+        this.$table = table;
+        this.$column = column;
+        this.$database = database;
+      }
+
+      async addBranchOf(data, parent) {
+        const item = Object.assign(data, {[this.$column]: parent});
+        return await this.$database.insertOne(this.$table, item);
+      }
+
+      async getBranchesOf(parentId) {
+        return await this.$database.selectMany(this.$table, [
+          [this.$column, "=", parentId]
+        ]);
+      }
+
+      async dropBranch(id) {
+        return this.$database.deleteOne(this.$table, id);
+      }
+
+    }
+
+    createTree(table, column) {
+      return this.constructor.BasicTree.from(table, column, this);
+    }
+
+  }
+
+  const FlexibleDB = class extends FlexibleDBTreesLayer {
 
   };
 

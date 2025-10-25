@@ -2,7 +2,7 @@ require(__dirname + "/flexible-db.js");
 
 const main = async function () {
   const flexdb = FlexibleDB.create({
-    
+
   });
 
   await flexdb.setSchema({
@@ -113,86 +113,32 @@ const main = async function () {
     permisos: [permisoMoverCosas],
     legislaciones: [legislacion1, legislacion2, legislacion3]
   });
-  const firewallRules = `
-    always {{ // console.log("Starting firewall") }}
-    create authentication as {{ await this.authenticateRequest(request) }}
-    event on model "Usuario" "Grupo" operation 
-      "server.selectOne"
-      "server.selectMany"
-      "server.updateOne"
-      "server.updateMany"
-      "server.deleteOne"
-      "server.deleteMany"
-      "server.addTable"
-      "server.addColumn"
-      "server.renameTable"
-      "server.renameColumn"
-      "server.deleteTable"
-      "server.deleteColumn"
-    then {
-      if not authentication then throw {{ new Error("Las tablas Usuario y Grupo requieren de autentificación") }}
-      create permisoDeOperacion as {{ authentication.permisos.map(row => row.operacion).indexOf("server." + operation) !== -1 }}
-      if not permisoDeOperacion then throw {{ new Error("La operación «" + operation + "» requiere de permiso de «server." + operation + "» específico") }}
-    }
-    always {{ console.log("Ending firewall") }}
-  `;
-  const server = flexdb.createServer(9090, {
-    authentication: true,
+  const query = FlexibleDB.BasicQuery.from({
+    database: flexdb,
+    steps: ["onStart", "onValidate", "onFetch", "onRun", "onConfirm"],
+    onStart: "this.processState = ['on start'];",
+    onValidate: "this.processState.push('on validate');",
+    onFetch: `this.$dataset = await this.database.selectMany("Usuario")`,
+    onRun: "this.processState.push('on run');",
+    onConfirm: `
+      FlexibleDB.assertion(Array.isArray(this.processState), "El parámetro «this.processState» debería ser un array");
+      FlexibleDB.assertion(this.processState[0] === 'on start', "El parámetro «this.processState[0]» debería ser 'on start'");
+      FlexibleDB.assertion(this.processState[1] === 'on validate', "El parámetro «this.processState[1]» debería ser 'on validate'");
+      FlexibleDB.assertion(this.processState[2] === 'on run', "El parámetro «this.processState[2]» debería ser 'on run'");
+      FlexibleDB.assertion(this.$dataset.length === 3, "El parámetro «this.$dataset.length» debería ser 3");
+    `,
+    onError: `
+      console.log("Broken in step: " + step);
+      throw error;
+    `
   });
-  await server.setFirewall(firewallRules).start();
-  const client = {
-    async post(operation) {
-      const response = await fetch("http://127.0.0.1:9090", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify(operation),
-      });
-      const output = await response.json();
-      if(output.error) {
-        throw output;
-      }
-      return output;
-    }
-  };
-  const authentication1R = await client.post({
-    opcode: "login",
-    authentication: "fake",
-    parameters: ["usuario1", null, "123456.1"],
-  });
-  const sessionToken1 = authentication1R.result;
-  FlexibleDB.assertion(typeof sessionToken1 === "string", "Parameter «sessionToken1» must be a string here");
-  const data1Response = await client.post({
-    opcode: "selectMany",
-    authentication: sessionToken1,
-    parameters: ["Grupo", [], true]
-  });
-  FlexibleDB.assertion(data1Response.result.length === 2, "Parameter «data1Response.result.length» must be 2 here");
-  const authentication2R = await client.post({
-    opcode: "login",
-    authentication: "fake",
-    parameters: ["usuario2", null, "123456.2"],
-  });
-  const sessionToken2 = authentication2R.result;
-  FlexibleDB.assertion(typeof authentication2R.result === "string", "Parameter «authentication2R.result» must be a string here");
-  let bien1 = false;
-  try {
-    const data2Response = await client.post({
-      opcode: "selectMany",
-      authentication: sessionToken2,
-      parameters: ["Grupo", [], true],
-    });
-    bien1 = false;
-  } catch (responseError) {
-    FlexibleDB.assertion(responseError.error.name === "Error", "Parameter «error.name» must be 'Error' here");
-    FlexibleDB.assertion(responseError.error.message === "La operación «selectMany» requiere de permiso de «server.selectMany» específico", "Parameter «error.message» must be a specific string here");
-    bien1 = true;
-  }
-  FlexibleDB.assertion(bien1 === true, "Parameter «bien1» must be true here");
-  server.stop();
-
-  console.log("Completado test-of-basic-auth-01.js");
+  await query.run();
+  FlexibleDB.assertion(Array.isArray(query.processState), "El parámetro «query.processState» debería ser un array");
+  FlexibleDB.assertion(query.processState[0] === 'on start', "El parámetro «query.processState[0]» debería ser 'on start'");
+  FlexibleDB.assertion(query.processState[1] === 'on validate', "El parámetro «query.processState[1]» debería ser 'on validate'");
+  FlexibleDB.assertion(query.processState[2] === 'on run', "El parámetro «query.processState[2]» debería ser 'on run'");
+  FlexibleDB.assertion(query.$dataset.length === 3, "El parámetro «query.$dataset.length» debería ser 3");
+  console.log("Completado test-of-query-api.js");
 
 };
 

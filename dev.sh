@@ -1,7 +1,6 @@
 npx nodemon \
   -w 'flexible-db.js' \
   -w 'test.js' \
-  -w 'test-on-basic-auth-01.js' \
   -w 'test-on-readme.js' \
   -w 'test-of-persistence.js' \
   -w 'test-of-trigger.js' \
@@ -17,5 +16,8 @@ npx nodemon \
   -w 'test-of-controller-language.js' \
   -w 'test-of-select-by-uid-and-others.js' \
   -w 'test-of-dataset-sync-methods.js' \
+  -w 'test-on-basic-auth-01.js' \
+  -w 'test-of-query-api.js' \
+  -w 'test-of-basic-tree-01.js' \
   -e 'js' \
   -x 'bash test-all.sh'

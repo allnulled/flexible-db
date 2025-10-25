@@ -81,6 +81,17 @@ Base de datos basada en JavaScript.
       - [`proxy.modifySync(callback:Function):BasicDataset`](#proxymodifysynccallbackfunctionbasicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
+    - [Query API](#query-api)
+      - [`query = FlexibleDB.BasicQuery.from(overrider:Object = {})`](#query--flexibledbbasicqueryfromoverriderobject--)
+      - [`async query.run():Promise`](#async-queryrunpromise)
+      - [`query.steps:Array<String>`](#querystepsarraystring)
+      - [`query.onError:Function|String`](#queryonerrorfunctionstring)
+      - [`query.wrapAsAsyncFunction(code:String, parameters:Array<String>)`](#querywrapasasyncfunctioncodestring-parametersarraystring)
+    - [Tree API](#tree-api)
+      - [`tree = db.createTree(table:String, column:String):BasicTree`](#tree--dbcreatetreetablestring-columnstringbasictree)
+      - [`async tree.addBranchOf(data:Object, parent:Integer):Promise<Integer>`](#async-treeaddbranchofdataobject-parentintegerpromiseinteger)
+      - [`async tree.getBranchesOf(parent:Integer):Promise<Array<Object>>`](#async-treegetbranchesofparentintegerpromisearrayobject)
+      - [`async tree.dropBranch(id:Integer):Promise<Boolean>`](#async-treedropbranchidintegerpromiseboolean)
   - [Tests](#tests)
   - [Ejemplo práctico](#ejemplo-práctico)
 
@@ -526,7 +537,7 @@ El ejemplo todavía no es muy completo, pero el lenguaje permite:
      - profundos con `else if {{ val }} then { ... }`
      - por defecto con `else then { ... }`
   - los `event on` son `if` en realidad
-  - lanzar errores con `throw {{ new Error("Whatever") }}
+  - lanzar errores con `throw {{ new Error("Whatever") }}`
   - iniciar un proceso con `start process Process_id { ... }`
   - romper un proceso con `break process Process_id`
   - definir un bloque con `define block Block_id { ... }`
@@ -915,9 +926,86 @@ Sigue el mismo contrato de tipos que el homónimo `db.attachRecords(sourceTable,
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
+### Query API
 
+La Query API es una API muy sencilla y abierta pero que permite gestionar los pasos de una consulta de datos en sentido amplio, mediante código asíncrono en `function` o `string`.
 
+Esto es para facilitar la conversión de APIs de interfaz gráfica a código y hacer de una `BasicQuery`, un objeto persistible fácilmente.
 
+#### `query = FlexibleDB.BasicQuery.from(overrider:Object = {})`
+
+Permite crear una `BasicQuery`.
+
+#### `async query.run():Promise`
+
+Permite llamar a todos los `query[query.steps[index]].call(query)` y funcionar tanto si son `function` como `string` con código asíncrono.
+
+#### `query.steps:Array<String>`
+
+Lista de pasos que sobreentiende `query.run` que se tienen que suceder entre sí.
+
+Sobreescribir para cambiar proceso en `query.run()`.
+
+#### `query.onError:Function|String`
+
+Permite inyectar una función que controle los errores.
+
+Por defecto va a imprimir `console.error("Error in step «" + step + "»", error);` y volverá a lanzar el error con `throw error;`.
+
+Sobreescribir para mejor gestión del error.
+
+La función recibe 2 parámetros:
+
+- `error:Error`: el error que ha saltado.
+- `step:String`: el método en el que ha saltado.
+
+Se puede poner en forma tanto de `function` como de `string` que gestionará el error con código plano también.
+
+#### `query.wrapAsAsyncFunction(code:String, parameters:Array<String>)`
+
+Método utilitario para fabricar `AsyncFunction` y definir los nombres de los parámetros de la función de una vez.
+
+Se utiliza en `query.run()` para evaluar a todos los `query.steps` que sean `string` y no `function`.
+
+También lo usa `query.run()` para gestionar los `onError`, que puede ser llamado aunque no aparezca en `query.steps`.
+
+### Tree API
+
+La `Tree API` puede ir bien para gestionar estructuras tipo árbol cuando una columna es `tree: true`, que forzadamente tiene que ser `referredTable: $self`.
+
+Es un conjunto de métodos muy reducido de momento que permite gestionar el uso clásico de un árbol suponiendo que la columna donde metemos `tree: true` es el **padre** del nodo.
+
+A continuación se transmiten los métodos y clases.
+
+#### `tree = db.createTree(table:String, column:String):BasicTree`
+
+Permite crear un árbol desde la base de datos, especificando `table` y `column` del schema.
+
+Se comprobará que el `db.$schema` esté apoyando esto.
+
+Se pondrán en `tree.$table` y `tree.$column`.
+
+#### `async tree.addBranchOf(data:Object, parent:Integer):Promise<Integer>`
+
+Permite añadir una subbranca a una branca padre.
+
+Sería lo mismo que sobreescribir la columna del `tree.$column` en el `data`.
+
+Por debajo hace un `db.insertOne` y lo devuelve.
+
+#### `async tree.getBranchesOf(parent:Integer):Promise<Array<Object>>`
+
+Permite acceder a las subbrancas de la branca especificada.
+
+Para obtener las brancas raíces, pasar `null` en `parent` es también correcto.
+
+#### `async tree.dropBranch(id:Integer):Promise<Boolean>`
+
+Permite eliminar una branca, si es que la tesis de integridad lo permite.
+
+No lo permitirá si hay alguna branca en la base de datos que tiene a ésta como padre, mediante la propiedad `tree.$column`, entre otras posibles comprobaciones.
+
+En otras palabras, no hará eliminación recursiva, de momento.
 
 ## Tests
 
