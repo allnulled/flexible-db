@@ -42,6 +42,7 @@ Base de datos basada en JavaScript.
       - [`server.start(port:Integer = this.$port):Promise`](#serverstartportinteger--thisportpromise)
       - [`server.login(alias:String|null, email:String|null, password:String):Promise<String>`](#serverloginaliasstringnull-emailstringnull-passwordstringpromisestring)
       - [`server.logout(token:String):Promise<Boolean>`](#serverlogouttokenstringpromiseboolean)
+      - [`server.authenticateRequest(request:ExpressRequest):Promise<Object|Boolean>`](#serverauthenticaterequestrequestexpressrequestpromiseobjectboolean)
       - [`server.getFirewall():AsyncFunction`](#servergetfirewallasyncfunction)
       - [`server.setFirewall(firewallCode:String):BasicServer`](#serversetfirewallfirewallcodestringbasicserver)
       - [`server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`](#servertriggerfirewalloperationstring-argsarray-authenticationtokenstring-requestexpressrequest-responseexpressresponse)
@@ -111,12 +112,16 @@ npm i -s @allnulled/flexible-db
    - `"array"`
    - `"object-reference"` (con integridad referencial)
    - `"array-reference"` (con integridad referencial)
-- Soporta métodos de esquema:
-- Soporta métodos de persistencia:
-- Soporta métodos de CRUD:
-- Soporta una API para proxificar datasets con:
-- Soporta una API para desplegar servidores HTTP:
-
+- Soporta métodos de esquema
+- Soporta métodos de persistencia
+- Soporta métodos de CRUD
+- Soporta una API para proxificar datasets
+- Soporta una API para desplegar servidores HTTP
+- Soporta un lenguaje DSL para concentrar el control de la autentificación y autorización
+   - Con un sistema de eventos básicos de esquema y CRUD a disposición
+   - Con gestión automática para `login` y `logout`
+   - Con opción de autentificar usuarios y gestionar sesiones con `authenticateRequest`
+      - Comprometiendo parcialmente el esquema con tablas específicas en español
 
 ## API
 
@@ -395,6 +400,32 @@ Permite iniciar o recuperar una sesión del sistema. Utiliza o `Usuario.alias` o
 #### `server.logout(token:String):Promise<Boolean>`
 
 Permite finalizar una sesión del sistema. Utiliza un `Sesion.token`.
+
+#### `server.authenticateRequest(request:ExpressRequest):Promise<Object|Boolean>`
+
+Permite autentificar una `request:ExpressRequest`.
+
+Esto inflará el campo `request.authentication` con un `Object`.
+
+Utiliza los campos `Sesion.token`, `Sesion.usuario`, `Usuario.id`, `Grupo.id`, `Permiso.id`.
+
+Este método se deja de libre uso, no se llama en el código explícitamente, y se reserva para utilizar en el `firewall` en función de los requisitos de la aplicación servidor.
+
+El procedimiento consiste en:
+
+- Ir a buscar en `request.body.authentication` el `Sesion.token`
+- De ahí arrastrar `usuario:Usuario`, `grupos:Array<Grupo>` y `permisos:Array<Permiso>`
+
+La vuelta es un objeto con:
+
+- `sesion:Sesion`
+- `usuario:Usuario`
+- `grupos:Array<Grupo>`
+- `permisos:Array<Permiso>`
+
+Se devuelve una `Promise` porque es asíncrono ya que usa varios `selectMany`/`selectOne`.
+
+Puede devolver `false:Boolean` si no encuentra ninguna sesión por el token proporcionado.
 
 #### `server.getFirewall():AsyncFunction`
 
