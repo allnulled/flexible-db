@@ -48,7 +48,6 @@ Base de datos basada en JavaScript.
       - [`server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`](#servertriggerfirewalloperationstring-argsarray-authenticationtokenstring-requestexpressrequest-responseexpressresponse)
       - [`server.stop():BasicServer`](#serverstopbasicserver)
       - [`server.clone():BasicServer`](#serverclonebasicserver)
-      - [`server.authenticateRequest(request):Promise<Object|Boolean>`](#serverauthenticaterequestrequestpromiseobjectboolean)
       - [`server.generateSessionToken():String`](#servergeneratesessiontokenstring)
       - [`server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null):String`](#serveronauthenticateopcodestring-argsarray-authenticationtokenstring--null-requestexpressrequest--null-responseexpressresponse--nullstring)
       - [`server.operation(opcode:String, args:Array):Promise<any>`](#serveroperationopcodestring-argsarraypromiseany)
@@ -566,17 +565,6 @@ Permite parar el servidor que estuviera corriendo y encadenar otros métodos.
 #### `server.clone():BasicServer`
 
 Devuelve otra instancia de `BasicServer.from(...server)`.
-
-#### `server.authenticateRequest(request):Promise<Object|Boolean>`
-
-Devuelve un objeto de autentificación. Tiene:
-
-- `usuario:Object`
-- `grupos:Array`
-- `permisos:Array`
-- `sesion:Object`
-
-Si no ha sido posible, devuelve un booleano `false`,
 
 #### `server.generateSessionToken():String`
 
