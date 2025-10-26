@@ -144,6 +144,17 @@ const main = async function () {
   FlexibleDB.assertion(dataset5[2].operacion === "server.updateMany", "Parameter dataset5[2].operacion must be 'updateMany'");
   FlexibleDB.assertion(dataset5[3].operacion === "server.deleteOne", "Parameter dataset5[3].operacion must be 'deleteOne'");
 
+  await proxy5.pipeMatrix([
+    ["mapByEval", ["return it.uid + ':' + it.operacion"]],
+  ]);
+  
+  const dataset6 = proxy5.getDataset();
+
+  FlexibleDB.assertion(dataset6[0] === "25:server.insertMany", "Parameter dataset6[0] must be '25:server.insertMany'");
+  FlexibleDB.assertion(dataset6[1] === "26:server.updateOne", "Parameter dataset6[1] must be '26:server.updateOne'");
+  FlexibleDB.assertion(dataset6[2] === "27:server.updateMany", "Parameter dataset6[2] must be '27:server.updateMany'");
+  FlexibleDB.assertion(dataset6[3] === "28:server.deleteOne", "Parameter dataset6[3] must be '28:server.deleteOne'");
+
   console.log("Completado test-of-dataset-sync-eval-methods.js");
 
 };

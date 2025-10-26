@@ -85,6 +85,7 @@ Base de datos basada en JavaScript.
       - [`proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`](#proxyreducebyevalcallbacksourcestring-originalany--promisebasicdataset)
       - [`proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`](#proxyeachbyevalcallbacksourcestringpromisebasicdataset)
       - [`proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`](#proxymodifybyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.pipeMatrix(signatures:Array):Promise<BasicDataset>`](#proxypipematrixsignaturesarraypromisebasicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
     - [Query API](#query-api)
@@ -927,7 +928,7 @@ Versión evaluativa de código, del mismo método. Tiene inyección de parámetr
 - `it:Object`: la row del `Array`.
 - `i:Integer`: el índice de la row.
 
-Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+Se espera código asíncrono directamente en un `string` para la función del método equivalente asíncrono.
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
@@ -938,7 +939,7 @@ Versión evaluativa de código, del mismo método. Tiene inyección de parámetr
 - `it:Object`: la row del `Array`.
 - `i:Integer`: el índice de la row.
 
-Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+Se espera código asíncrono directamente en un `string` para la función del método equivalente asíncrono.
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
@@ -950,7 +951,7 @@ Versión evaluativa de código, del mismo método. Tiene inyección de parámetr
 - `it:Object`: la row del `Array`.
 - `i:Integer`: el índice de la row.
 
-Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+Se espera código asíncrono directamente en un `string` para la función del método equivalente asíncrono.
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
@@ -961,13 +962,38 @@ Versión evaluativa de código, del mismo método. Tiene inyección de parámetr
 - `it:Object`: la row del `Array`.
 - `i:Integer`: el índice de la row.
 
-Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+Se espera código asíncrono directamente en un `string` para la función del método equivalente asíncrono.
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
 #### `proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`
 
-Versión evaluativa de código, del mismo método.
+Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
+
+- `input:any`: el `proxy.$dataset`.
+- `dataset:BasicDataset`: el `proxy`.
+
+Se espera código asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+
+Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
+
+#### `proxy.pipeMatrix(signatures:Array):Promise<BasicDataset>`
+
+Permite procesar el `proxy.$dataset` por diferentes métodos del proxy, de golpe.
+
+En `signatures:Array` se espera un conjunto de reglas donde:
+
+- `signatures[i][0]:String`: nombre del método del mismo `proxy`.
+- `signatures[i][1]:Array`: parámetros de la llamada al método.
+
+De esta forma, puede usarse así:
+
+```js
+await proxy.pipeMatrix([
+  ["mapByEval", "return await this.$databaset.selectOne('Permiso', it)"]
+  ["mapByEval", "return it.operacion"]
+]);
+```
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 

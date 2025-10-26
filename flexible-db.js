@@ -1442,6 +1442,15 @@
         return this;
       }
 
+      async pipeMatrix(signatures = []) {
+        for(let indexSignature=0; indexSignature<signatures.length; indexSignature++) {
+          const signature = signatures[indexSignature];
+          const [ method, parameters ] = signature;
+          await this[method].call(this, ...parameters);
+        }
+        return this;
+      }
+
       deduplicate() {
         const output = [];
         const outputIds = [];
