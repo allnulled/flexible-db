@@ -90,6 +90,8 @@ Base de datos basada en JavaScript.
       - [`async proxy.groupByColumns(columns:Array<String>):BasicDataset`](#async-proxygroupbycolumnscolumnsarraystringbasicdataset)
       - [`async proxy.groupByCallback(callback:Function):Promise<BasicDataset>`](#async-proxygroupbycallbackcallbackfunctionpromisebasicdataset)
       - [`async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`](#async-proxygroupbycallbackscallbacksarrayfunctionpromisebasicdataset)
+      - [`async proxy.groupByEval(evalSource:String):Promise<BasicDataset>`](#async-proxygroupbyevalevalsourcestringpromisebasicdataset)
+      - [`async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>`](#async-proxygroupbyevalsevalslistarraystringpromisebasicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
     - [Query API](#query-api)
@@ -1040,14 +1042,15 @@ Las funciones pueden ser asíncronas.
 Un simple ejemplo de uso sería este:
 
 ```js
-flexdb.createDataset([
+const proxy = await flexdb.createDataset([
   { name: "Ana", age: 10, active: true },
   { name: "Luis", age: 10, active: false },
   { name: "Eva", age: 20, active: true },
 ]).groupByCallbacks([
   it => it.active ? "activos" : "inactivos",
   it => it.age < 18 ? "menores" : "adultos"
-]).debug();
+]);
+proxy.debug();
 ```
 
 Esto nos imprime:
@@ -1055,23 +1058,23 @@ Esto nos imprime:
 ```json
 {
   "activos": {
-    "menores": {
+    "menores": [{
       "name": "Ana",
       "age": 10,
       "active": true
-    },
-    "adultos": {
+    }],
+    "adultos": [{
       "name": "Eva",
       "age": 20,
       "active": true
-    }
+    }]
   },
   "inactivos": {
-    "menores": {
+    "menores": [{
       "name": "Luis",
       "age": 10,
       "active": false
-    }
+    }]
   }
 }
 ```
@@ -1082,6 +1085,76 @@ Con este método sí puedes hacer:
 - **agrupaciones multinivel** con diferentes condiciones y campos.
 
 Es el más completo de la saga de métodos `groupBy`.
+
+También se puede devolver un `Array<String>` para clasificar a 1 row en varias categorías a la vez:
+
+```js
+const proxy = await flexdb.createDataset([
+  { name: "Ana", age: 10, active: true },
+  { name: "Luis", age: 10, active: false },
+  { name: "Eva", age: 20, active: true },
+]).groupByCallbacks([
+  it => it.active ? "activos" : "inactivos",
+  it => it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos",
+])
+proxy.debug();
+```
+
+Este ejemplo, en cambio, nos daría:
+
+```json
+{
+  "activos": {
+    "menores": [{
+      "name": "Ana",
+      "age": 10,
+      "active": true
+    }],
+    "adultos": [{
+      "name": "Eva",
+      "age": 20,
+      "active": true
+    }],
+    "jovenes": [{
+      "name": "Eva",
+      "age": 20,
+      "active": true
+    }]
+  },
+  "inactivos": {
+    "menores": [{
+      "name": "Luis",
+      "age": 10,
+      "active": false
+    }]
+  }
+}
+```
+
+Como se ve, `Eva` aparece en 2 categorías a la vez: `adultos` y `jovenes`. Y solo hemos devuelto un `Array<String>` con las categorías en las que queríamos que apareciera, según la lógica que quisiéramos.
+
+#### `async proxy.groupByEval(evalSource:String):Promise<BasicDataset>`
+
+Permite llamar a `proxy.groupByCallback` pero sin usar una función, solo `string` con código asíncrono.
+
+#### `async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>`
+
+Permite llamar a `proxy.groupByCallbacks` pero sin usar una función, solo `string` con código asíncrono.
+
+El ejemplo anterior se haría con:
+
+```js
+const proxy6 = await flexdb.createDataset([
+  { name: "Ana", age: 10, active: true },
+  { name: "Luis", age: 10, active: false },
+  { name: "Eva", age: 20, active: true },
+]).groupByEvals([
+  `return it.active ? "activos" : "inactivos";`,
+  `return it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos";`,
+]);
+```
+
+Este método es también el más completo de la saga `groupBy`, permite lo mismo que `groupByCallbacks`.
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 

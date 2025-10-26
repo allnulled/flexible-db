@@ -1438,7 +1438,7 @@
 
       debug(msg = "[debug][BasicDataset]") {
         console.log(msg);
-        console.log(this.$dataset);
+        console.log(JSON.stringify(this.$dataset, null, 2));
         return this;
       }
 
@@ -1491,21 +1491,45 @@
       }
 
       async groupByCallbacks(callbacks) {
-        assertion(Array.isArray(callbacks) && callbacks.length > 0,"Parameter «callbacks» must be a non-empty array on «groupByCallbacks»");
-        assertion(Array.isArray(this.$dataset),"Parameter «this.$dataset» must be an array on «groupByCallbacks»");
+        assertion(Array.isArray(callbacks) && callbacks.length > 0, "Parameter «callbacks» must be a non-empty array on «groupByCallbacks»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «groupByCallbacks»");
         const root = {};
         for (let idx = 0; idx < this.$dataset.length; idx++) {
           const item = this.$dataset[idx];
-          let currentLevel = root;
+          let activeLevels = [root];
           for (let level = 0; level < callbacks.length; level++) {
             const cb = callbacks[level];
             assertion(typeof cb === "function", `callbacks[${level}] must be a function on «groupByCallbacks»`);
-            const key = await cb(item, idx);
-            assertion(typeof key === "string", `Callback at index ${level} must return a string on «groupByCallbacks»`);
-            if (!currentLevel[key]) {
-              currentLevel[key] = (level === callbacks.length - 1) ? item : {};
+            const result = await cb(item, idx);
+            let keys;
+            if (typeof result === "string") {
+              keys = [result];
+            } else if (Array.isArray(result)) {
+              assertion(result.every(k => typeof k === "string"), `Callback at index ${level} must return string or array<string>`);
+              keys = result;
+            } else {
+              assertion(false, `Callback at index ${level} must return string or array<string>`);
             }
-            currentLevel = currentLevel[key];
+            const newActiveLevels = [];
+            for (const lvl of activeLevels) {
+              for (const key of keys) {
+                if (level === callbacks.length - 1) {
+                  // Último nivel: arrays
+                  if (!lvl[key]) {
+                    lvl[key] = [];
+                  }
+                  lvl[key].push(item);
+                  newActiveLevels.push(lvl[key]);
+                } else {
+                  // Nivel intermedio: objetos
+                  if (!lvl[key]) {
+                    lvl[key] = {};
+                  }
+                  newActiveLevels.push(lvl[key]);
+                }
+              }
+            }
+            activeLevels = newActiveLevels;
           }
         }
         this.$dataset = root;
@@ -1516,6 +1540,30 @@
         assertion(typeof callback === "function", "Parameter «callback» must be a function on «groupByCallback»");
         return this.groupByCallbacks([callback]);
       }
+
+      groupByEval(evalItem) {
+        return this.groupByEvals([evalItem]);
+      }
+
+      groupByEvals(evalsList) {
+        assertion(Array.isArray(evalsList), "Parameter «evalsList» must be an array on «groupByEvals»");
+        const callbacks = [];
+        for(let index=0; index<evalsList.length; index++) {
+          const evalItem = evalsList[index];
+          const isFunction = typeof evalItem === "function";
+          const isCode = typeof evalItem === "string";
+          assertion(isFunction || isCode, `Parameter «evalsList[${index}]» must be a function or a string on «groupByEvals»`);
+          if(isFunction) {
+            callbacks.push(evalItem);
+          } else if(isCode) {
+            callbacks.push(wrapAsAsyncFunction(evalItem, ["it", "i"]));
+          }
+        }
+        assertion(evalsList, "Parameter «evalsList» must be an array on «groupByEvals»");
+        return this.groupByCallbacks(callbacks);
+      }
+
+      sortByCallback() {}
 
 
       deduplicate() {

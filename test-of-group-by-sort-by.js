@@ -116,22 +116,15 @@ const main = async function () {
 
   const dataset1 = await flexdb.selectMany("Grupo");
 
-  const proxy2 = flexdb.createDataset(dataset1).groupByColumn("legislaciones");
-  const proxy3 = flexdb.createDataset(dataset1).groupByColumns(["legislaciones", "permisos", "nombre"]);
-  const proxy4 = await flexdb.createDataset([
-    { name: "Ana", age: 10, active: true },
-    { name: "Luis", age: 10, active: false },
-    { name: "Eva", age: 20, active: true },
-  ]).groupByCallbacks([
-    it => it.active ? "activos" : "inactivos",
-    it => it.age < 18 ? "menores" : "adultos",
-  ]);
+  const proxy2 = flexdb.createDataset(dataset1).groupByColumn("legislaciones"); 
 
   const dataset2 = proxy2.getDataset();
   FlexibleDB.assertion(typeof dataset2 === "object", "dataset2 must be an object here");
   FlexibleDB.assertion(typeof dataset2[1] === "object", "dataset2[1] must be an object here");
   FlexibleDB.assertion(typeof dataset2[2] === "object", "dataset2[2] must be an object here");
   FlexibleDB.assertion(typeof dataset2[3] === "object", "dataset2[3] must be an object here");
+
+  const proxy3 = flexdb.createDataset(dataset1).groupByColumns(["legislaciones", "permisos", "nombre"]);
 
   const dataset3 = proxy3.getDataset();
   FlexibleDB.assertion(typeof dataset3 === "object", "dataset3 must be an object here");
@@ -141,6 +134,15 @@ const main = async function () {
   FlexibleDB.assertion(typeof dataset3[2] === "object", "dataset3[2] must be an object here");
   FlexibleDB.assertion(typeof dataset3[3] === "object", "dataset3[3] must be an object here");
 
+  const proxy4 = await flexdb.createDataset([
+    { name: "Ana", age: 10, active: true },
+    { name: "Luis", age: 10, active: false },
+    { name: "Eva", age: 20, active: true },
+  ]).groupByCallbacks([
+    it => it.active ? "activos" : "inactivos",
+    it => it.age < 18 ? "menores" : "adultos",
+  ]);
+
   const dataset4 = proxy4.getDataset();
   FlexibleDB.assertion(typeof dataset4 === "object", "dataset4 must be an object here");
   FlexibleDB.assertion(typeof dataset4.activos === "object", "dataset4.activos must be an object here");
@@ -149,6 +151,58 @@ const main = async function () {
   FlexibleDB.assertion(typeof dataset4.inactivos === "object", "dataset4.inactivos must be an object here");
   FlexibleDB.assertion(typeof dataset4.inactivos.menores === "object", "dataset4.inactivos.menores must be an object here");
 
+  const proxy5 = await flexdb.createDataset([
+    { name: "Ana", age: 10, active: true },
+    { name: "Luis", age: 10, active: false },
+    { name: "Eva", age: 20, active: true },
+  ]).groupByCallbacks([
+    it => it.active ? "activos" : "inactivos",
+    it => it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos",
+  ]);
+
+  const dataset5 = proxy5.getDataset();
+  FlexibleDB.assertion(typeof dataset5 === "object", "Parameter «dataset5» must be an object here");
+  FlexibleDB.assertion(typeof dataset5.activos === "object", "Parameter «dataset5.activos» must be an object here");
+  FlexibleDB.assertion(typeof dataset5.activos.menores === "object", "Parameter «dataset5.activos.menores» must be an object here");
+  FlexibleDB.assertion(Array.isArray(dataset5.activos.menores), "Parameter «dataset5.activos.menores» must be an array here");
+  FlexibleDB.assertion(dataset5.activos.menores.length === 1, "Parameter «dataset5.activos.menores.length» must be 1 here");
+  FlexibleDB.assertion(dataset5.activos.menores[0].name === "Ana", "Parameter «dataset5.activos.menores[0].name» must be 'Ana' here");
+  FlexibleDB.assertion(dataset5.activos.adultos[0].name === "Eva", "Parameter «dataset5.activos.adultos[0].name» must be 'Eva' here");
+  FlexibleDB.assertion(dataset5.activos.jovenes[0].name === "Eva", "Parameter «dataset5.activos.jovenes[0].name» must be 'Eva' here");
+  FlexibleDB.assertion(typeof dataset5.activos.adultos === "object", "Parameter «dataset5.activos.adultos» must be an object here");
+  FlexibleDB.assertion(typeof dataset5.inactivos === "object", "Parameter «dataset5.inactivos» must be an object here");
+  FlexibleDB.assertion(typeof dataset5.inactivos.menores === "object", "Parameter «dataset5.inactivos.menores» must be an object here");
+
+  const proxy6 = await flexdb.createDataset([
+    { name: "Ana", age: 10, active: true },
+    { name: "Luis", age: 10, active: false },
+    { name: "Eva", age: 20, active: true },
+  ]).groupByEvals([
+    `return it.active ? "activos" : "inactivos";`,
+    `return it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos";`,
+  ]);
+  
+  const dataset6 = proxy6.getDataset();
+  FlexibleDB.assertion(typeof dataset6 === "object", "Parameter «dataset6» must be an object here");
+  FlexibleDB.assertion(typeof dataset6.activos === "object", "Parameter «dataset6.activos» must be an object here");
+  FlexibleDB.assertion(typeof dataset6.activos.menores === "object", "Parameter «dataset6.activos.menores» must be an object here");
+  FlexibleDB.assertion(Array.isArray(dataset6.activos.menores), "Parameter «dataset6.activos.menores» must be an array here");
+  FlexibleDB.assertion(dataset6.activos.menores.length === 1, "Parameter «dataset6.activos.menores.length» must be 1 here");
+  FlexibleDB.assertion(dataset6.activos.menores[0].name === "Ana", "Parameter «dataset6.activos.menores[0].name» must be 'Ana' here");
+  FlexibleDB.assertion(dataset6.activos.adultos[0].name === "Eva", "Parameter «dataset6.activos.adultos[0].name» must be 'Eva' here");
+  FlexibleDB.assertion(dataset6.activos.jovenes[0].name === "Eva", "Parameter «dataset6.activos.jovenes[0].name» must be 'Eva' here");
+  FlexibleDB.assertion(typeof dataset6.activos.adultos === "object", "Parameter «dataset6.activos.adultos» must be an object here");
+  FlexibleDB.assertion(typeof dataset6.inactivos === "object", "Parameter «dataset6.inactivos» must be an object here");
+  FlexibleDB.assertion(typeof dataset6.inactivos.menores === "object", "Parameter «dataset6.inactivos.menores» must be an object here");
+
+  const proxy = await flexdb.createDataset([
+    { name: "Ana", age: 10, active: true },
+    { name: "Luis", age: 10, active: false },
+    { name: "Eva", age: 20, active: true },
+  ]).groupByCallbacks([
+    it => it.active ? "activos" : "inactivos",
+    it => it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos",
+  ])
 
   console.log("Completado test-of-group-by-sort-by.js");
 
