@@ -79,6 +79,12 @@ Base de datos basada en JavaScript.
       - [`proxy.reduceSync(callback:Function, original:any = []):BasicDataset`](#proxyreducesynccallbackfunction-originalany--basicdataset)
       - [`proxy.eachSync(callback:Function):BasicDataset`](#proxyeachsynccallbackfunctionbasicdataset)
       - [`proxy.modifySync(callback:Function):BasicDataset`](#proxymodifysynccallbackfunctionbasicdataset)
+      - [`proxy.debug(message:String):BasicDataset`](#proxydebugmessagestringbasicdataset)
+      - [`proxy.filterByEval(callbackSource:String):Promise<BasicDataset>`](#proxyfilterbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.mapByEval(callbackSource:String):Promise<BasicDataset>`](#proxymapbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`](#proxyreducebyevalcallbacksourcestring-originalany--promisebasicdataset)
+      - [`proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`](#proxyeachbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`](#proxymodifybyevalcallbacksourcestringpromisebasicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
     - [Query API](#query-api)
@@ -909,6 +915,59 @@ Versión síncrona del mismo método. Es la misma firma contractual que `Array.p
 #### `proxy.modifySync(callback:Function):BasicDataset`
 
 Versión síncrona del mismo método.
+
+#### `proxy.debug(message:String):BasicDataset`
+
+Permite imprimir el `proxy.$dataset` adjuntando algún mensaje y encadenar otros métodos.
+
+#### `proxy.filterByEval(callbackSource:String):Promise<BasicDataset>`
+
+Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
+
+- `it:Object`: la row del `Array`.
+- `i:Integer`: el índice de la row.
+
+Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+
+Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
+
+#### `proxy.mapByEval(callbackSource:String):Promise<BasicDataset>`
+
+Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
+
+- `it:Object`: la row del `Array`.
+- `i:Integer`: el índice de la row.
+
+Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+
+Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
+
+#### `proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`
+
+Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
+
+- `output:Array`: el `Array`.
+- `it:Object`: la row del `Array`.
+- `i:Integer`: el índice de la row.
+
+Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+
+Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
+
+#### `proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`
+
+Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
+
+- `it:Object`: la row del `Array`.
+- `i:Integer`: el índice de la row.
+
+Se espera códgo asíncrono directamente en un `string` para la función del método equivalente asíncrono.
+
+Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
+
+#### `proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`
+
+Versión evaluativa de código, del mismo método.
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 

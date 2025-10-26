@@ -125,13 +125,26 @@ const main = async function () {
   }, []);
   const output1 = proxy4.getDataset();
   FlexibleDB.assertion(proxy2.getDataset().length === 2, "Parameter «proxy2.getDataset().length» must be 2 here");
+  FlexibleDB.assertion(output1.length === 4, "Parameter «output1.length» must be 4 here");
   FlexibleDB.assertion(output1[0] === 6, "Parameter «output1[0]» must be 6 here");
   FlexibleDB.assertion(output1[1] === 7, "Parameter «output1[0]» must be 7 here");
   FlexibleDB.assertion(output1[2] === 8, "Parameter «output1[0]» must be 8 here");
   FlexibleDB.assertion(output1[3] === 9, "Parameter «output1[0]» must be 9 here");
-  FlexibleDB.assertion(output1.length === 4, "Parameter «output1.length» must be 4 here");
 
-  console.log("Completado test-of-dataset-sync-methods.js");
+  const proxy5 = proxy4.clone();
+
+  await proxy5.mapByEval("return await this.$database.selectOne('Permiso', it)");
+  
+  const dataset5 = proxy5.getDataset();
+
+  FlexibleDB.assertion(Array.isArray(dataset5), "Parameter dataset5 must be an array");
+  FlexibleDB.assertion(dataset5.length === 4, "Parameter dataset5.length must be 4");
+  FlexibleDB.assertion(dataset5[0].operacion === "server.insertMany", "Parameter dataset5[0].operacion must be 'insertMany'");
+  FlexibleDB.assertion(dataset5[1].operacion === "server.updateOne", "Parameter dataset5[1].operacion must be 'updateOne'");
+  FlexibleDB.assertion(dataset5[2].operacion === "server.updateMany", "Parameter dataset5[2].operacion must be 'updateMany'");
+  FlexibleDB.assertion(dataset5[3].operacion === "server.deleteOne", "Parameter dataset5[3].operacion must be 'deleteOne'");
+
+  console.log("Completado test-of-dataset-sync-eval-methods.js");
 
 };
 

@@ -1,5 +1,23 @@
 # CHANGELOG
 
+# Sobre la versión 5.
+
+## Versión 5.0.7
+
+- [x] En cuanto a los métodos de array típicos:
+   - [x] que serían:
+      - [x] `filter`: `filterSync`, `filterByEval`
+      - [x] `map`: `mapSync`, `mapByEval`
+      - [x] `reduce`: `reduceSync`, `reduceByEval`
+      - [x] `modify`: `modifySync`, `modifyByEval`
+      - [x] `each`: `eachSync`, `eachByEval`
+   - [x] API de versión síncrona: con `BasicDataset.<operation>Sync`
+      - [x] para poder usar la versión síncrona de los métodos `<operation>`
+   - [x] API de versión evaluativa: con `BasicDataset.<operation>ByEval`
+      - [x] para poder usar texto en lugar de funciones
+   - [x] mejorado el `test-of-dataset-sync-eval-methods.js`
+- [x] método `dataset.debug(mensaje:String)` para debugging
+
 # Sobre la versión 4.
 
 ## Versión 4.0.4

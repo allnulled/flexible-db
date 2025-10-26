@@ -1,6 +1,6 @@
 node test-of-basic-tree-01.js
 node test-of-query-api.js
-node test-of-dataset-sync-methods.js
+node test-of-dataset-sync-eval-methods.js
 node test-of-basic-auth-01.js
 node test-of-select-by-uid-and-others.js
 node test-of-controller-language.js

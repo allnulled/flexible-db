@@ -40,6 +40,12 @@
     return error;
   };
 
+  const wrapAsAsyncFunction = function (code, parameters = []) {
+    const AsyncFunction = (async function () { }).constructor;
+    const callback = new AsyncFunction(...parameters, code);
+    return callback;
+  };
+
   const FlexibleDBBasicLayer = class {
 
     static AssertionError = AssertionError;
@@ -152,7 +158,7 @@
               assertion(columnMetadata.referredTable in schema, `Schema column type «${tableId}.${columnId}» on «array-reference» requires property «referredTable» to be a known table on «setSchema»`);
             }
             Checking_tree_flag:
-            if(columnMetadata.tree === true) {
+            if (columnMetadata.tree === true) {
               assertion(columnMetadata.referredTable === tableId, `Schema column type «${tableId}.${columnId}» required property «referredTable» to be the same «${tableId}» in case you want to keep {tree: true} on «setSchema»`);
             }
           }
@@ -310,7 +316,7 @@
               }
               const rowPropertyValue = row[propertyId];
               const hasId = ("id" in value) && (typeof value.id !== "undefined") && (value.id !== null);
-              if(!hasId) {
+              if (!hasId) {
                 assertion(value[propertyId] !== rowPropertyValue, `Property «${propertyId}» must be unique but is repeated on id «${row.id}» on «${contextId}»`);
               }
             }
@@ -1248,7 +1254,7 @@
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
-            const isFiltered = await callback(row, indexRow);
+            const isFiltered = await callback.call(this, row, indexRow);
             if (isFiltered === true) {
               output.push(row);
             }
@@ -1275,7 +1281,7 @@
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
-            const isModified = await callback(row, indexRow);
+            const isModified = await callback.call(this, row, indexRow);
             if (typeof isModified !== "undefined") {
               output.push(isModified);
             } else {
@@ -1304,7 +1310,7 @@
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
-            const isChanged = await callback(output, row, indexRow);
+            const isChanged = await callback.call(this, output, row, indexRow);
             if (typeof isChanged !== "undefined") {
               if (output !== isChanged) {
                 output = isChanged;
@@ -1332,7 +1338,7 @@
         for (let indexRow = 0; indexRow < this.$dataset.length; indexRow++) {
           const row = this.$dataset[indexRow];
           try {
-            await callback(output, row, indexRow);
+            await callback.call(this, output, row, indexRow);
           } catch (error) {
             console.log(error);
             console.log("(each failed, but process continues anyway.");
@@ -1370,9 +1376,9 @@
       }
 
       eachSync(callback) {
-        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «reduceSync»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «eachSync»");
         assertion(typeof callback === "function", "Parameter «callback» must be a function on «eachSync»");
-        for(let index=0; index<this.$dataset.length; index++) {
+        for (let index = 0; index < this.$dataset.length; index++) {
           const row = this.$dataset[index];
           callback(row, index, this.$dataset);
         }
@@ -1383,6 +1389,56 @@
         assertion(typeof callback === "function", "Parameter «callback» must be a function on «modifySync»");
         const output = callback.call(this, this.$dataset, this);
         this.$dataset = typeof output !== "undefined" ? output : this.$dataset;
+        return this;
+      }
+
+      async filterByEval(callbackSource) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «filterByEval»");
+        assertion(typeof callbackSource === "string", "Parameter «callbackSource» must be a string on «filterByEval»");
+        const callback = wrapAsAsyncFunction(callbackSource, ["it", "i", "output"]);
+        await this.filter(callback);
+        return this;
+      }
+
+      async mapByEval(callbackSource) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «mapByEval»");
+        assertion(typeof callbackSource === "string", "Parameter «callbackSource» must be a string on «mapByEval»");
+        const callback = wrapAsAsyncFunction(callbackSource, ["it", "i", "output"]);
+        await this.map(callback);
+        return this;
+      }
+
+      async reduceByEval(callbackSource, output) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «reduceByEval»");
+        assertion(typeof callbackSource === "string", "Parameter «callbackSource» must be a string on «reduceByEval»");
+        const callback = wrapAsAsyncFunction(callbackSource, ["output", "it", "i"]);
+        await this.reduce(callback, output);
+        this.$dataset = this.$dataset.reduce(callback, output);
+        return this;
+      }
+
+      async eachByEval(callbackSource) {
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «eachByEval»");
+        assertion(typeof callbackSource === "string", "Parameter «callbackSource» must be a string on «eachByEval»");
+        const callback = wrapAsAsyncFunction(callbackSource, ["it", "i", "output"]);
+        for (let index = 0; index < this.$dataset.length; index++) {
+          const row = this.$dataset[index];
+          await callback.call(this, row, index, this.$dataset);
+        }
+        return this;
+      }
+
+      async modifyByEval(callbackSource) {
+        assertion(typeof callbackSource === "string", "Parameter «callbackSource» must be a string on «modifyByEval»");
+        const callback = wrapAsAsyncFunction(callbackSource, ["input", "dataset"]);
+        const output = await callback.call(this, this.$dataset, this);
+        this.$dataset = typeof output !== "undefined" ? output : this.$dataset;
+        return this;
+      }
+
+      debug(msg = "[debug][BasicDataset]") {
+        console.log(msg);
+        console.log(this.$dataset);
         return this;
       }
 
@@ -1755,16 +1811,16 @@
         "onEnd",
       ];
 
-      onStart() {}
-      onReset() {}
-      onFetch() {}
-      onValidate() {}
-      onPrepare() {}
-      onQuery() {}
-      onConfirm() {}
-      onTransform() {}
-      onCommit() {}
-      onEnd() {}
+      onStart() { }
+      onReset() { }
+      onFetch() { }
+      onValidate() { }
+      onPrepare() { }
+      onQuery() { }
+      onConfirm() { }
+      onTransform() { }
+      onCommit() { }
+      onEnd() { }
 
       onError(error, step) {
         console.error(`Error in step «${step}»`, error);
@@ -1772,37 +1828,33 @@
       }
 
       async run() {
-        for(let indexStep=0; indexStep<this.steps.length; indexStep++) {
+        for (let indexStep = 0; indexStep < this.steps.length; indexStep++) {
           const step = this.steps[indexStep];
           let callback = undefined;
-          if(typeof this[step] === "string") {
-            callback = this.wrapAsAsyncFunction(this[step]);
-          } else if(typeof this[step] === "function") {
+          if (typeof this[step] === "string") {
+            callback = wrapAsAsyncFunction(this[step]);
+          } else if (typeof this[step] === "function") {
             callback = this[step];
           } else {
-            callback = () => {};
+            callback = () => { };
           }
           try {
             await callback.call(this);
           } catch (error) {
             let handler = undefined;
-            if(typeof this.onError === "string") {
-              handler = this.wrapAsAsyncFunction(this.onError, ["error", "step"]);
-            } else if(typeof this.onError === "function") {
+            if (typeof this.onError === "string") {
+              handler = wrapAsAsyncFunction(this.onError, ["error", "step"]);
+            } else if (typeof this.onError === "function") {
               handler = this.onError;
             } else {
-              handler = () => {};
+              handler = () => { };
             }
             await handler.call(this, error, step);
           }
         }
       }
 
-      wrapAsAsyncFunction(code, parameters = []) {
-        const AsyncFunction = (async function() {}).constructor;
-        const callback = new AsyncFunction(...parameters, code);
-        return callback;
-      }
+
 
     }
 
@@ -1829,7 +1881,7 @@
       }
 
       async addBranchOf(data, parent) {
-        const item = Object.assign(data, {[this.$column]: parent});
+        const item = Object.assign(data, { [this.$column]: parent });
         return await this.$database.insertOne(this.$table, item);
       }
 
