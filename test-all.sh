@@ -1,3 +1,4 @@
+node test-of-group-by-sort-by.js
 node test-of-basic-tree-01.js
 node test-of-query-api.js
 node test-of-dataset-sync-eval-methods.js

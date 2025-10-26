@@ -1442,14 +1442,81 @@
         return this;
       }
 
-      async pipeMatrix(signatures = []) {
-        for(let indexSignature=0; indexSignature<signatures.length; indexSignature++) {
+      async pipeByMatrix(signatures = []) {
+        for (let indexSignature = 0; indexSignature < signatures.length; indexSignature++) {
           const signature = signatures[indexSignature];
-          const [ method, parameters ] = signature;
+          const [method, parameters] = signature;
           await this[method].call(this, ...parameters);
         }
         return this;
       }
+
+      groupByColumn(column) {
+        return this.groupByColumns([column]);
+      }
+
+      groupByColumns(columns) {
+        assertion(Array.isArray(columns), "Parameter «columns» must be an array on «groupByColumns»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «groupByColumns»");
+        const root = {};
+        for (const item of this.$dataset) {
+          // función recursiva para poder expandir arrays
+          const assignItem = (obj, item, level) => {
+            const col = columns[level];
+            const value = item[col];
+            if (Array.isArray(value)) {
+              // Para cada valor del array, se continúa el descenso
+              for (const v of value) {
+                if (!obj[v]) {
+                  obj[v] = (level === columns.length - 1) ? item : {};
+                }
+                if (level < columns.length - 1) {
+                  assignItem(obj[v], item, level + 1);
+                }
+              }
+            } else {
+              // Caso normal: valor simple
+              if (!obj[value]) {
+                obj[value] = (level === columns.length - 1) ? item : {};
+              }
+              if (level < columns.length - 1) {
+                assignItem(obj[value], item, level + 1);
+              }
+            }
+          };
+          assignItem(root, item, 0);
+        }
+        this.$dataset = root;
+        return this;
+      }
+
+      async groupByCallbacks(callbacks) {
+        assertion(Array.isArray(callbacks) && callbacks.length > 0,"Parameter «callbacks» must be a non-empty array on «groupByCallbacks»");
+        assertion(Array.isArray(this.$dataset),"Parameter «this.$dataset» must be an array on «groupByCallbacks»");
+        const root = {};
+        for (let idx = 0; idx < this.$dataset.length; idx++) {
+          const item = this.$dataset[idx];
+          let currentLevel = root;
+          for (let level = 0; level < callbacks.length; level++) {
+            const cb = callbacks[level];
+            assertion(typeof cb === "function", `callbacks[${level}] must be a function on «groupByCallbacks»`);
+            const key = await cb(item, idx);
+            assertion(typeof key === "string", `Callback at index ${level} must return a string on «groupByCallbacks»`);
+            if (!currentLevel[key]) {
+              currentLevel[key] = (level === callbacks.length - 1) ? item : {};
+            }
+            currentLevel = currentLevel[key];
+          }
+        }
+        this.$dataset = root;
+        return this;
+      }
+
+      groupByCallback(callback) {
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «groupByCallback»");
+        return this.groupByCallbacks([callback]);
+      }
+
 
       deduplicate() {
         const output = [];

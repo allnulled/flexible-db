@@ -85,7 +85,11 @@ Base de datos basada en JavaScript.
       - [`proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`](#proxyreducebyevalcallbacksourcestring-originalany--promisebasicdataset)
       - [`proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`](#proxyeachbyevalcallbacksourcestringpromisebasicdataset)
       - [`proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`](#proxymodifybyevalcallbacksourcestringpromisebasicdataset)
-      - [`proxy.pipeMatrix(signatures:Array):Promise<BasicDataset>`](#proxypipematrixsignaturesarraypromisebasicdataset)
+      - [`proxy.pipeByMatrix(signatures:Array):Promise<BasicDataset>`](#proxypipebymatrixsignaturesarraypromisebasicdataset)
+      - [`async proxy.groupByColumn(column:String):BasicDataset`](#async-proxygroupbycolumncolumnstringbasicdataset)
+      - [`async proxy.groupByColumns(columns:Array<String>):BasicDataset`](#async-proxygroupbycolumnscolumnsarraystringbasicdataset)
+      - [`async proxy.groupByCallback(callback:Function):Promise<BasicDataset>`](#async-proxygroupbycallbackcallbackfunctionpromisebasicdataset)
+      - [`async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`](#async-proxygroupbycallbackscallbacksarrayfunctionpromisebasicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
     - [Query API](#query-api)
@@ -977,7 +981,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### `proxy.pipeMatrix(signatures:Array):Promise<BasicDataset>`
+#### `proxy.pipeByMatrix(signatures:Array):Promise<BasicDataset>`
 
 Permite procesar el `proxy.$dataset` por diferentes métodos del proxy, de golpe.
 
@@ -989,11 +993,95 @@ En `signatures:Array` se espera un conjunto de reglas donde:
 De esta forma, puede usarse así:
 
 ```js
-await proxy.pipeMatrix([
-  ["mapByEval", "return await this.$databaset.selectOne('Permiso', it)"]
+await proxy.pipeByMatrix([
+  ["mapByEval", "return await this.$database.selectOne('Permiso', it)"]
   ["mapByEval", "return it.operacion"]
 ]);
 ```
+
+#### `async proxy.groupByColumn(column:String):BasicDataset`
+
+Permite mutar el `proxy.$dataset` a un objeto con propiedades los valores de `proxy.$dataset[*][column]`.
+
+Esas propiedades serán `Array` con todos los ítems que tienen, en el campo `column`, el valor de esa propiedad.
+
+El resultado será `proxy.$dataset[propiedad]:Array<Object>`.
+
+El problema de este método es que el corte es, estrictamente, el valor del campo. A menudo querremos hacer cortes de rango, y para eso, este método no nos servirá.
+
+#### `async proxy.groupByColumns(columns:Array<String>):BasicDataset`
+
+Permite lo mismo que el anterior, pero estableciendo más de 1 nivel de agrupación.
+
+De esta forma, podemos hacer `proxy.$dataset[column1][column2][column3]...` y seguir las agrupaciones.
+
+El problema de este método es que el corte es, estrictamente, el valor del campo. A menudo querremos hacer cortes de rango, y para eso, este método no nos servirá.
+
+#### `async proxy.groupByCallback(callback:Function):Promise<BasicDataset>`
+
+Permite crear grupos de 1 nivel utilizando una función para saber en qué grupo cae cada row.
+
+La `callback:Function` recibirá `it:Object` e `i:Integer` con la row y el índice de row.
+
+La `callback:Function` devolverá un `label:String` con el nombre de la propiedad donde esta row cae.
+
+El `proxy.$dataset` entonces mutará para un objeto.
+
+Por tanto, este método requiere de `proxy.$dataset:Array` al principio, y terminará con `proxy.$dataset:Object`.
+
+Solo permite agrupaciones de 1 nivel.
+
+#### `async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`
+
+Mismo método, pero permitiendo agrupaciones multinivel, al aceptar no 1 `Function` sino un `Array<Function>`.
+
+Las funciones pueden ser asíncronas.
+
+Un simple ejemplo de uso sería este:
+
+```js
+flexdb.createDataset([
+  { name: "Ana", age: 10, active: true },
+  { name: "Luis", age: 10, active: false },
+  { name: "Eva", age: 20, active: true },
+]).groupByCallbacks([
+  it => it.active ? "activos" : "inactivos",
+  it => it.age < 18 ? "menores" : "adultos"
+]).debug();
+```
+
+Esto nos imprime:
+
+```json
+{
+  "activos": {
+    "menores": {
+      "name": "Ana",
+      "age": 10,
+      "active": true
+    },
+    "adultos": {
+      "name": "Eva",
+      "age": 20,
+      "active": true
+    }
+  },
+  "inactivos": {
+    "menores": {
+      "name": "Luis",
+      "age": 10,
+      "active": false
+    }
+  }
+}
+```
+
+Con este método sí puedes hacer:
+
+- **cortes de rango** y otras condiciones más complejas.
+- **agrupaciones multinivel** con diferentes condiciones y campos.
+
+Es el más completo de la saga de métodos `groupBy`.
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 
@@ -1021,9 +1109,28 @@ Esto es para facilitar la conversión de APIs de interfaz gráfica a código y h
 
 Permite crear una `BasicQuery`.
 
+Por defecto, `BasicQuery` introduce estos `query.steps` por defecto, que pueden sobreescribirse con `overrider` fácilmente:
+
+```js
+  steps = [
+    "onStart",
+    "onReset",
+    "onFetch",
+    "onValidate",
+    "onPrepare",
+    "onQuery",
+    "onConfirm",
+    "onTransform",
+    "onCommit",
+    "onEnd",
+  ];
+```
+
+Puedes sobreescribir cualquiera con una `function` o con un `string` con código asíncrono, que `query.run()` funcionará correctamente.
+
 #### `async query.run():Promise`
 
-Permite llamar a todos los `query[query.steps[index]].call(query)` y funcionar tanto si son `function` como `string` con código asíncrono.
+Permite llamar a todos los `query[query.steps[i]].call(query)` y funcionar tanto si son `function` como `string` con código asíncrono.
 
 #### `query.steps:Array<String>`
 

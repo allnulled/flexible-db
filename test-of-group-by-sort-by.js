@@ -2,7 +2,7 @@ require(__dirname + "/flexible-db.js");
 
 const main = async function () {
   const flexdb = FlexibleDB.create({
-    
+
   });
 
   await flexdb.setSchema({
@@ -47,11 +47,11 @@ const main = async function () {
   });
 
   await flexdb.insertOne("Persona", { nombre: "Carlos", edad: 20, pais: 1, tags: ["uat"] });
-  await flexdb.insertOne("Persona", { nombre: "user2", edad:  30, pais: 1, tags: ["cal"] });
-  await flexdb.insertOne("Persona", { nombre: "user3", edad:  40, pais: 1, tags: ["nic"] });
-  await flexdb.insertOne("Persona", { nombre: "user4", edad:  50, pais: 1 });
-  await flexdb.insertOne("Persona", { nombre: "user5", edad:  60, pais: 1 });
-  await flexdb.insertOne("Persona", { nombre: "user6", edad:  70, pais: 1 });
+  await flexdb.insertOne("Persona", { nombre: "user2", edad: 30, pais: 1, tags: ["cal"] });
+  await flexdb.insertOne("Persona", { nombre: "user3", edad: 40, pais: 1, tags: ["nic"] });
+  await flexdb.insertOne("Persona", { nombre: "user4", edad: 50, pais: 1 });
+  await flexdb.insertOne("Persona", { nombre: "user5", edad: 60, pais: 1 });
+  await flexdb.insertOne("Persona", { nombre: "user6", edad: 70, pais: 1 });
   const legislacion1 = await flexdb.insertOne("Legislacion", { titulo: "Carta de derechos 1", contenido: "tal", creador: 1 });
   const legislacion2 = await flexdb.insertOne("Legislacion", { titulo: "Carta de derechos 2", contenido: "tal", creador: 2 });
   const legislacion3 = await flexdb.insertOne("Legislacion", { titulo: "Carta de derechos 3", contenido: "tal", creador: 1 });
@@ -113,49 +113,44 @@ const main = async function () {
     permisos: [permisoMoverCosas],
     legislaciones: [legislacion1, legislacion2, legislacion3]
   });
-  const grupos = await flexdb.selectMany("Grupo", []);
-  const proxy1 = flexdb.createDataset(grupos, "Grupo");
-  const proxy2 = proxy1.clone().mapSync(row => row.permisos);
-  const proxy3 = proxy1.clone().findBySelector(["permisos"]).filterSync(permiso => permiso < 10);
-  const proxy4 = proxy3.clone().reduceSync((out,row) => {
-    if(row > 5) {
-      out.push(row);
-    }
-    return out;
-  }, []);
-  const output1 = proxy4.getDataset();
-  FlexibleDB.assertion(proxy2.getDataset().length === 2, "Parameter «proxy2.getDataset().length» must be 2 here");
-  FlexibleDB.assertion(output1.length === 4, "Parameter «output1.length» must be 4 here");
-  FlexibleDB.assertion(output1[0] === 6, "Parameter «output1[0]» must be 6 here");
-  FlexibleDB.assertion(output1[1] === 7, "Parameter «output1[0]» must be 7 here");
-  FlexibleDB.assertion(output1[2] === 8, "Parameter «output1[0]» must be 8 here");
-  FlexibleDB.assertion(output1[3] === 9, "Parameter «output1[0]» must be 9 here");
 
-  const proxy5 = proxy4.clone();
+  const dataset1 = await flexdb.selectMany("Grupo");
 
-  await proxy5.mapByEval("return await this.$database.selectOne('Permiso', it)");
-  
-  const dataset5 = proxy5.getDataset();
-
-  FlexibleDB.assertion(Array.isArray(dataset5), "Parameter dataset5 must be an array");
-  FlexibleDB.assertion(dataset5.length === 4, "Parameter dataset5.length must be 4");
-  FlexibleDB.assertion(dataset5[0].operacion === "server.insertMany", "Parameter dataset5[0].operacion must be 'insertMany'");
-  FlexibleDB.assertion(dataset5[1].operacion === "server.updateOne", "Parameter dataset5[1].operacion must be 'updateOne'");
-  FlexibleDB.assertion(dataset5[2].operacion === "server.updateMany", "Parameter dataset5[2].operacion must be 'updateMany'");
-  FlexibleDB.assertion(dataset5[3].operacion === "server.deleteOne", "Parameter dataset5[3].operacion must be 'deleteOne'");
-
-  await proxy5.pipeByMatrix([
-    ["mapByEval", ["return it.uid + ':' + it.operacion"]],
+  const proxy2 = flexdb.createDataset(dataset1).groupByColumn("legislaciones");
+  const proxy3 = flexdb.createDataset(dataset1).groupByColumns(["legislaciones", "permisos", "nombre"]);
+  const proxy4 = await flexdb.createDataset([
+    { name: "Ana", age: 10, active: true },
+    { name: "Luis", age: 10, active: false },
+    { name: "Eva", age: 20, active: true },
+  ]).groupByCallbacks([
+    it => it.active ? "activos" : "inactivos",
+    it => it.age < 18 ? "menores" : "adultos",
   ]);
-  
-  const dataset6 = proxy5.getDataset();
 
-  FlexibleDB.assertion(dataset6[0] === "25:server.insertMany", "Parameter dataset6[0] must be '25:server.insertMany'");
-  FlexibleDB.assertion(dataset6[1] === "26:server.updateOne", "Parameter dataset6[1] must be '26:server.updateOne'");
-  FlexibleDB.assertion(dataset6[2] === "27:server.updateMany", "Parameter dataset6[2] must be '27:server.updateMany'");
-  FlexibleDB.assertion(dataset6[3] === "28:server.deleteOne", "Parameter dataset6[3] must be '28:server.deleteOne'");
+  const dataset2 = proxy2.getDataset();
+  FlexibleDB.assertion(typeof dataset2 === "object", "dataset2 must be an object here");
+  FlexibleDB.assertion(typeof dataset2[1] === "object", "dataset2[1] must be an object here");
+  FlexibleDB.assertion(typeof dataset2[2] === "object", "dataset2[2] must be an object here");
+  FlexibleDB.assertion(typeof dataset2[3] === "object", "dataset2[3] must be an object here");
 
-  console.log("Completado test-of-dataset-sync-eval-methods.js");
+  const dataset3 = proxy3.getDataset();
+  FlexibleDB.assertion(typeof dataset3 === "object", "dataset3 must be an object here");
+  FlexibleDB.assertion(typeof dataset3[1] === "object", "dataset3[1] must be an object here");
+  FlexibleDB.assertion(typeof dataset3[1][1] === "object", "dataset3[1][1] must be an object here");
+  FlexibleDB.assertion(typeof dataset3[1][18] === "object", "dataset3[1][18] must be an object here");
+  FlexibleDB.assertion(typeof dataset3[2] === "object", "dataset3[2] must be an object here");
+  FlexibleDB.assertion(typeof dataset3[3] === "object", "dataset3[3] must be an object here");
+
+  const dataset4 = proxy4.getDataset();
+  FlexibleDB.assertion(typeof dataset4 === "object", "dataset4 must be an object here");
+  FlexibleDB.assertion(typeof dataset4.activos === "object", "dataset4.activos must be an object here");
+  FlexibleDB.assertion(typeof dataset4.activos.menores === "object", "dataset4.activos.menores must be an object here");
+  FlexibleDB.assertion(typeof dataset4.activos.adultos === "object", "dataset4.activos.adultos must be an object here");
+  FlexibleDB.assertion(typeof dataset4.inactivos === "object", "dataset4.inactivos must be an object here");
+  FlexibleDB.assertion(typeof dataset4.inactivos.menores === "object", "dataset4.inactivos.menores must be an object here");
+
+
+  console.log("Completado test-of-group-by-sort-by.js");
 
 };
 

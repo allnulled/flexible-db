@@ -19,5 +19,6 @@ npx nodemon \
   -w 'test-on-basic-auth-01.js' \
   -w 'test-of-query-api.js' \
   -w 'test-of-basic-tree-01.js' \
+  -w 'test-of-group-by-sort-by.js' \
   -e 'js' \
   -x 'bash test-all.sh'
