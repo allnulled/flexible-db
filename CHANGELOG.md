@@ -2,6 +2,11 @@
 
 # Sobre la versión 5.
 
+## Versión 5.0.10
+
+- [x] groupByCallbacks
+- [x] groupByEvals
+
 ## Versión 5.0.7
 
 - [x] En cuanto a los métodos de array típicos:
