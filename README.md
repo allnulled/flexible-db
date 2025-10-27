@@ -1185,13 +1185,13 @@ Por ejemplo:
 
 ```js
 flexdb.createDataset([
-  { name: "Ana", surname: "Bac", active: true },
-  { name: "Luis", surname: "Cac", active: false },
-  { name: "Eva", surname: "Dac", active: true },
+  { name: "Ana", surname: "Dac", active: true },
+  { name: "Luis", surname: "Bac", active: false },
+  { name: "Eva", surname: "Cac", active: true },
 ]).sortByEval("return a.surname > b.surname ? 1 : -1;").debug();
 ```
 
-Nos dará a Ana, Luis y Eva por este orden. Es un ejemplo.
+Nos dará a Luis, Eva y Ana por este orden. Es un ejemplo.
 
 #### `proxy.extendBy(overrider:Object = {}):BasicDataset`
 

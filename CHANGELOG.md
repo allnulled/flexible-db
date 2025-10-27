@@ -2,6 +2,10 @@
 
 # Sobre la versión 5.
 
+## Versión 5.0.14
+
+- [x] Sincronizado sortByCallback
+
 ## Versión 5.0.13
 
 - [x] Mejorado README.

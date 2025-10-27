@@ -262,6 +262,19 @@ const main = async function () {
   FlexibleDB.assertion(dataset11[1].name === "Luis", "Parameter «dataset11[1].name» must be 'Luis' here");
   FlexibleDB.assertion(dataset11[2].name === "Eva", "Parameter «dataset11[2].name» must be 'Eva' here");
 
+  const proxy12 = flexdb.createDataset([
+    { name: "Ana", surname: "Cac", active: true },
+    { name: "Luis", surname: "Bac", active: false },
+    { name: "Eva", surname: "Dac", active: true },
+  ]).sortByEval("return a.surname > b.surname ? 1 : -1;");
+  
+  const dataset12 = proxy12.getDataset();
+
+  FlexibleDB.assertion(dataset12.length === 3, "Parameter «dataset12.length» must be 3 here");
+  FlexibleDB.assertion(dataset12[0].name === "Luis", "Parameter «dataset12[0].name» must be 'Luis' here");
+  FlexibleDB.assertion(dataset12[1].name === "Ana", "Parameter «dataset12[1].name» must be 'Ana' here");
+  FlexibleDB.assertion(dataset12[2].name === "Eva", "Parameter «dataset12[2].name» must be 'Eva' here");
+
   console.log("Completado test-of-group-by-sort-by.js");
 
 };

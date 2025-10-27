@@ -46,6 +46,11 @@
     return callback;
   };
 
+  const wrapAsSyncFunction = function (code, parameters = []) {
+    const callback = new Function(...parameters, code);
+    return callback;
+  };
+
   const FlexibleDBBasicLayer = class {
 
     static AssertionError = AssertionError;
@@ -1606,7 +1611,7 @@
 
       sortByEval(source) {
         assertion(typeof source === "string", "Parameter «source» must be a string on «sortByEval»");
-        const callback = wrapAsAsyncFunction(source, ["a", "b"]);
+        const callback = wrapAsSyncFunction(source, ["a", "b"]);
         return this.sortByCallback(callback);
       }
 
