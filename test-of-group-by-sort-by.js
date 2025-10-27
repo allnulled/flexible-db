@@ -204,7 +204,7 @@ const main = async function () {
     it => it.age < 18 ? "menores" : (it.age >= 18) && (it.age < 35) ? ["adultos", "jovenes"] : it.age < 65 ? ["adultos"] : "veteranos",
   ]);
 
-  const proxy8 = await flexdb.createDataset([
+  const proxy8 = flexdb.createDataset([
     { name: "Ana", age: 10, active: true },
     { name: "Luis", age: 10, active: false },
     { name: "Eva", age: 20, active: true },
@@ -217,7 +217,7 @@ const main = async function () {
   FlexibleDB.assertion(dataset8[1].name === "Eva", "Parameter «dataset8[1].name» must be 'Eva' here");
   FlexibleDB.assertion(dataset8[2].name === "Luis", "Parameter «dataset8[2].name» must be 'Luis' here");
 
-  const proxy9 = await flexdb.createDataset([
+  const proxy9 = flexdb.createDataset([
     { name: "Ana", surname: "Bac", active: true },
     { name: "Luis", surname: "Cac", active: false },
     { name: "Eva", surname: "Dac", active: true },
@@ -234,7 +234,7 @@ const main = async function () {
 
   FlexibleDB.assertion(proxy9.info === "whatever", "Parameter «proxy9.info» must be 'whatever' here");
 
-  const proxy10 = await flexdb.createDataset([
+  const proxy10 = flexdb.createDataset([
     { name: "Ana", surname: "Bac", active: true },
     { name: "Luis", surname: "Cac", active: false },
     { name: "Eva", surname: "Dac", active: true },
@@ -249,7 +249,7 @@ const main = async function () {
   FlexibleDB.assertion(dataset10[1].name === "Luis", "Parameter «dataset10[1].name» must be 'Luis' here");
   FlexibleDB.assertion(dataset10[2].name === "Eva", "Parameter «dataset10[2].name» must be 'Eva' here");
 
-  const proxy11 = await flexdb.createDataset([
+  const proxy11 = flexdb.createDataset([
     { name: "Ana", surname: "Bac", active: true },
     { name: "Luis", surname: "Cac", active: false },
     { name: "Eva", surname: "Dac", active: true },

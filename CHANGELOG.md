@@ -2,6 +2,10 @@
 
 # Sobre la versión 5.
 
+## Versión 5.0.13
+
+- [x] Mejorado README.
+
 ## Versión 5.0.12
 
 - [x] sortByColumn
