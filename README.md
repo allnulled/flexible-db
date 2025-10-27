@@ -92,6 +92,11 @@ Base de datos basada en JavaScript.
       - [`async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`](#async-proxygroupbycallbackscallbacksarrayfunctionpromisebasicdataset)
       - [`async proxy.groupByEval(evalSource:String):Promise<BasicDataset>`](#async-proxygroupbyevalevalsourcestringpromisebasicdataset)
       - [`async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>`](#async-proxygroupbyevalsevalslistarraystringpromisebasicdataset)
+      - [`async proxy.sortByColumn(column:String):BasicDataset`](#async-proxysortbycolumncolumnstringbasicdataset)
+      - [`async proxy.sortByColumns(columns:Array<String>):BasicDataset`](#async-proxysortbycolumnscolumnsarraystringbasicdataset)
+      - [`async proxy.sortByCallback(callback:Function):BasicDataset`](#async-proxysortbycallbackcallbackfunctionbasicdataset)
+      - [`async proxy.sortByEval(source:String):BasicDataset`](#async-proxysortbyevalsourcestringbasicdataset)
+      - [`extendBy(overrider:Object = {}):BasicDataset`](#extendbyoverriderobject--basicdataset)
       - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
       - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
     - [Query API](#query-api)
@@ -1155,6 +1160,44 @@ const proxy6 = await flexdb.createDataset([
 ```
 
 Este método es también el más completo de la saga `groupBy`, permite lo mismo que `groupByCallbacks`.
+
+#### `async proxy.sortByColumn(column:String):BasicDataset`
+
+Permite reordenar un `proxy.$dataset:Array` según el valor de una columna.
+
+#### `async proxy.sortByColumns(columns:Array<String>):BasicDataset`
+
+Permite reordenar un `proxy.$dataset:Array` según el valor de varias columnas, donde las columnas aparecen por orden de prioridad.
+
+#### `async proxy.sortByCallback(callback:Function):BasicDataset`
+
+Permite reordenar un `proxy.$dataset:Array` mediante una función `sort` típica.
+
+Se le inyectan `a, b`.
+
+#### `async proxy.sortByEval(source:String):BasicDataset`
+
+Versión del mismo método pero usando código en formato `string`.
+
+Se le inyectan `a, b`.
+
+Por ejemplo:
+
+```js
+flexdb.createDataset([
+  { name: "Ana", surname: "Bac", active: true },
+  { name: "Luis", surname: "Cac", active: false },
+  { name: "Eva", surname: "Dac", active: true },
+]).sortByEval("return a.surname > b.surname ? 1 : -1;").debug();
+```
+
+Nos dará a Ana, Luis y Eva por este orden. Es un ejemplo.
+
+#### `extendBy(overrider:Object = {}):BasicDataset`
+
+Permite extender/sobreescribir cualquier propiedad o método del dataset.
+
+Generalmente, interesará sobreescribir propiedades instumentales para el proceso de formateo del dataset.
 
 #### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 

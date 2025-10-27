@@ -1563,8 +1563,57 @@
         return this.groupByCallbacks(callbacks);
       }
 
-      sortByCallback() {}
+      sortByCallback(callback) {
+        assertion(typeof callback === "function", "Parameter «callback» must be a function on «sortByCallback»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «sortByCallback»");
+        this.$dataset = this.$dataset.sort(callback.bind(this));
+        return this;
+      }
 
+      sortByColumn(column) {
+        assertion(typeof column === "string", "Parameter «column» must be a string on «sortByColumn»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «sortByColumn»");
+        this.$dataset = this.$dataset.sort((a, b) => {
+          const val1 = a[column];
+          const val2 = b[column];
+          if(typeof val2 === "undefined") return -1;
+          if(typeof val1 === "undefined") return 1;
+          return val2 < val1 ? 1 : -1;
+        });
+        return this;
+      }
+
+      sortByColumns(columns) {
+        assertion(Array.isArray(columns), "Parameter «columns» must be an array on «sortByColumns»");
+        assertion(Array.isArray(this.$dataset), "Parameter «this.$dataset» must be an array on «sortByColumns»");
+        this.$dataset = this.$dataset.sort((a, b) => {
+          for(let index=0; index<columns.length; index++) {
+            const column = columns[index];
+            const val1 = a[column];
+            const val2 = b[column];
+            if(typeof val2 === "undefined") return -1;
+            if(typeof val1 === "undefined") return 1;
+            if(val2 < val1) {
+              return 1;
+            } else if(val2 >= val1) {
+              return -1;
+            }
+          }
+          return -1;
+        });
+        return this;
+      }
+
+      sortByEval(source) {
+        assertion(typeof source === "string", "Parameter «source» must be a string on «sortByEval»");
+        const callback = wrapAsAsyncFunction(source, ["a", "b"]);
+        return this.sortByCallback(callback);
+      }
+
+      extendBy(overrider = {}) {
+        Object.assign(this, overrider);
+        return this;
+      }
 
       deduplicate() {
         const output = [];

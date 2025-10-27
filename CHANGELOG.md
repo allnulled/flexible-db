@@ -2,6 +2,14 @@
 
 # Sobre la versión 5.
 
+## Versión 5.0.12
+
+- [x] sortByColumn
+- [x] sortByColumns
+- [x] sortByCallback
+- [x] sortByEval
+- [x] extendBy
+
 ## Versión 5.0.10
 
 - [x] groupByCallbacks
