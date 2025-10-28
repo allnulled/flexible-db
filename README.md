@@ -11,105 +11,105 @@ Base de datos basada en JavaScript.
   - [Features](#features)
   - [API](#api)
   - [Database API](#database-api)
-      - [db = FlexibleDB.create(options:Object): Object](#db--flexibledbcreateoptionsobject-object)
-      - [db.getSchema(): Object](#dbgetschema-object)
-      - [db.getRelationsSchema(): Object](#dbgetrelationsschema-object)
-      - [db.setSchema(schema:Object): void](#dbsetschemaschemaobject-void)
-      - [db.dehydrate(): String](#dbdehydrate-string)
-      - [db.hydrate(stringifiedDatabase:String): Promise](#dbhydratestringifieddatabasestring-promise)
-      - [db.selectMany(table:String, filter:Function|Array = SELECT\_ALL\_FILTER, withTableType:Boolean|String = false): Promise](#dbselectmanytablestring-filterfunctionarray--select_all_filter-withtabletypebooleanstring--false-promise)
-      - [db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise](#dbselectonetablestring-idnumber-withtabletypeboolean--false-promise)
-      - [db.selectByUid(uid:String): Promise](#dbselectbyuiduidstring-promise)
-      - [db.selectByLabel(table:String, label:String): Promise](#dbselectbylabeltablestring-labelstring-promise)
-      - [db.selectByLabels(table:String, labels:Array): Promise](#dbselectbylabelstablestring-labelsarray-promise)
-      - [db.insertOne(table:String, value:Object): Promise](#dbinsertonetablestring-valueobject-promise)
-      - [db.insertMany(table:String, values:Array): Promise\<Array\>](#dbinsertmanytablestring-valuesarray-promisearray)
-      - [db.updateOne(table:String, id:Integer, properties:Object): Promise](#dbupdateonetablestring-idinteger-propertiesobject-promise)
-      - [db.updateMany(table:String, filter:Function, properties:Object): Promise\<Array\>](#dbupdatemanytablestring-filterfunction-propertiesobject-promisearray)
-      - [db.deleteOne(table:String, id:Integer): Promise](#dbdeleteonetablestring-idinteger-promise)
-      - [db.deleteMany(table:String, filter:Function): Promise\<Array\>](#dbdeletemanytablestring-filterfunction-promisearray)
-      - [db.renameTable(table:String, newName:String): Promise](#dbrenametabletablestring-newnamestring-promise)
-      - [db.renameColumn(table:String, column:String, newName:String): Promise](#dbrenamecolumntablestring-columnstring-newnamestring-promise)
-      - [db.addTable(table:String): Promise](#dbaddtabletablestring-promise)
-      - [db.addColumn(table:String, column:String, metadata:Object): Promise](#dbaddcolumntablestring-columnstring-metadataobject-promise)
-      - [db.dropTable(table:String): Promise](#dbdroptabletablestring-promise)
-      - [db.dropColumn(table:String, column:String): Promise](#dbdropcolumntablestring-columnstring-promise)
-      - [db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise](#dbmodifyalltablestring-modifierfunction-errorhandlerfunction--consolelog-promise)
-      - [db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise](#dbexpandrecordssourcetablestring-datasetarray-expandspecobject-promise)
-      - [db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise](#dbattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstring-datasetarray-promise)
+      - [`db = FlexibleDB.create(options:Object): Object`](#db--flexibledbcreateoptionsobject-object)
+      - [`db.getSchema(): Object`](#dbgetschema-object)
+      - [`db.getRelationsSchema(): Object`](#dbgetrelationsschema-object)
+      - [`db.setSchema(schema:Object): void`](#dbsetschemaschemaobject-void)
+      - [`db.dehydrate(): String`](#dbdehydrate-string)
+      - [`db.hydrate(stringifiedDatabase:String): Promise<void>`](#dbhydratestringifieddatabasestring-promisevoid)
+      - [`db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`](#dbselectmanytablestring-filterfunctionarray--select_all_filter-withtabletypebooleanstring--false-promisearray)
+      - [`db.selectOne(table:String, id:Number, withTableType:Boolean|String = false): Promise<Object>`](#dbselectonetablestring-idnumber-withtabletypebooleanstring--false-promiseobject)
+      - [`db.selectByUid(uid:String): Promise<Object>`](#dbselectbyuiduidstring-promiseobject)
+      - [`db.selectByLabel(table:String, label:String): Promise<Array>`](#dbselectbylabeltablestring-labelstring-promisearray)
+      - [`db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`](#dbselectbylabelstablestring-labelsarraystring-promisearray)
+      - [`db.insertOne(table:String, value:Object): Promise<Integer>`](#dbinsertonetablestring-valueobject-promiseinteger)
+      - [`db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`](#dbinsertmanytablestring-valuesarrayobject-promisearrayinteger)
+      - [`db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>`](#dbupdateonetablestring-idinteger-propertiesobject-promiseboolean)
+      - [`db.updateMany(table:String, filter:Function, properties:Object): Promise<Array<Integer>>`](#dbupdatemanytablestring-filterfunction-propertiesobject-promisearrayinteger)
+      - [`db.deleteOne(table:String, id:Integer): Promise<Boolean>`](#dbdeleteonetablestring-idinteger-promiseboolean)
+      - [`db.deleteMany(table:String, filter:Function): Promise<Array<Integer>>`](#dbdeletemanytablestring-filterfunction-promisearrayinteger)
+      - [`db.renameTable(table:String, newName:String): Promise<Boolean>`](#dbrenametabletablestring-newnamestring-promiseboolean)
+      - [`db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`](#dbrenamecolumntablestring-columnstring-newnamestring-promiseboolean)
+      - [`db.addTable(table:String): Promise<Boolean>`](#dbaddtabletablestring-promiseboolean)
+      - [`db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`](#dbaddcolumntablestring-columnstring-metadataobject-promiseboolean)
+      - [`db.dropTable(table:String): Promise<Boolean>`](#dbdroptabletablestring-promiseboolean)
+      - [`db.dropColumn(table:String, column:String): Promise<Boolean>`](#dbdropcolumntablestring-columnstring-promiseboolean)
+      - [`db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`](#dbmodifyalltablestring-modifierfunction-errorhandlerfunction--consolelog-promisearray)
+      - [`db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`](#dbexpandrecordssourcetablestring-datasetarray-expandspecobject-promisearray)
+      - [`db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`](#dbattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstring-datasetarray-promisearray)
   - [Server API](#server-api)
-      - [server = db.createServer(port:Integer):BasicServer](#server--dbcreateserverportintegerbasicserver)
-      - [server.start(port:Integer = this.$port):Promise](#serverstartportinteger--thisportpromise)
-      - [server.login(alias:String|null, email:String|null, password:String):Promise](#serverloginaliasstringnull-emailstringnull-passwordstringpromise)
-      - [server.logout(token:String):Promise](#serverlogouttokenstringpromise)
-      - [server.authenticateRequest(request:ExpressRequest):Promise\<Object|Boolean\>](#serverauthenticaterequestrequestexpressrequestpromiseobjectboolean)
-      - [server.getFirewall():AsyncFunction](#servergetfirewallasyncfunction)
-      - [server.setFirewall(firewallCode:String):BasicServer](#serversetfirewallfirewallcodestringbasicserver)
-      - [server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)](#servertriggerfirewalloperationstring-argsarray-authenticationtokenstring-requestexpressrequest-responseexpressresponse)
-      - [server.stop():BasicServer](#serverstopbasicserver)
-      - [server.clone():BasicServer](#serverclonebasicserver)
-      - [server.generateSessionToken():String](#servergeneratesessiontokenstring)
-      - [server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null):String](#serveronauthenticateopcodestring-argsarray-authenticationtokenstring--null-requestexpressrequest--null-responseexpressresponse--nullstring)
-      - [server.operation(opcode:String, args:Array):Promise](#serveroperationopcodestring-argsarraypromise)
+      - [`server = db.createServer(port:Integer):BasicServer`](#server--dbcreateserverportintegerbasicserver)
+      - [`server.start(port:Integer = this.$port):Promise`](#serverstartportinteger--thisportpromise)
+      - [`server.login(alias:String|null, email:String|null, password:String):Promise<String>`](#serverloginaliasstringnull-emailstringnull-passwordstringpromisestring)
+      - [`server.logout(token:String):Promise<Boolean>`](#serverlogouttokenstringpromiseboolean)
+      - [`server.authenticateRequest(request:ExpressRequest):Promise<Object|Boolean>`](#serverauthenticaterequestrequestexpressrequestpromiseobjectboolean)
+      - [`server.getFirewall():AsyncFunction`](#servergetfirewallasyncfunction)
+      - [`server.setFirewall(firewallCode:String):BasicServer`](#serversetfirewallfirewallcodestringbasicserver)
+      - [`server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`](#servertriggerfirewalloperationstring-argsarray-authenticationtokenstring-requestexpressrequest-responseexpressresponse)
+      - [`server.stop():BasicServer`](#serverstopbasicserver)
+      - [`server.clone():BasicServer`](#serverclonebasicserver)
+      - [`server.generateSessionToken():String`](#servergeneratesessiontokenstring)
+      - [`server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null)`:String](#serveronauthenticateopcodestring-argsarray-authenticationtokenstring--null-requestexpressrequest--null-responseexpressresponse--nullstring)
+      - [`server.operation(opcode:String, args:Array):Promise<any>`](#serveroperationopcodestring-argsarraypromiseany)
   - [Dataset API](#dataset-api)
-      - [proxy = db.createDataset(dataset:Array, table:String = null)](#proxy--dbcreatedatasetdatasetarray-tablestring--null)
-      - [proxy.$dataset:Array](#proxydatasetarray)
-      - [proxy.$database:Object](#proxydatabaseobject)
-      - [proxy.$table:String](#proxytablestring)
-      - [proxy.findBySelector(selectorList:Array = \[\]):BasicDataset](#proxyfindbyselectorselectorlistarray--basicdataset)
-      - [proxy.setDataset(dataset:Array):BasicDataset](#proxysetdatasetdatasetarraybasicdataset)
-      - [proxy.setTable(table:String):BasicDataset](#proxysettabletablestringbasicdataset)
-      - [proxy.setDatabase(database:Object):BasicDataset](#proxysetdatabasedatabaseobjectbasicdataset)
-      - [proxy.getDataset():any](#proxygetdatasetany)
-      - [proxy.copy():BasicDataset](#proxycopybasicdataset)
-      - [proxy.clone():BasicDataset](#proxyclonebasicdataset)
-      - [proxy.deduplicate():BasicDataset](#proxydeduplicatebasicdataset)
-      - [proxy.filterById(id:String):BasicDataset](#proxyfilterbyididstringbasicdataset)
-      - [proxy.mapById(id:String):BasicDataset](#proxymapbyididstringbasicdataset)
-      - [proxy.flat():BasicDataset](#proxyflatbasicdataset)
-      - [proxy.hasAnyOf(list:Array):BasicDataset](#proxyhasanyoflistarraybasicdataset)
-      - [BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset](#basicdatasethasanyoflist1array-list2arraybasicdataset)
-      - [async proxy.filter(callback:Function):Promise](#async-proxyfiltercallbackfunctionpromise)
-      - [async proxy.map(callback:Function):Promise](#async-proxymapcallbackfunctionpromise)
-      - [async proxy.reduce(callback:Function, original:any = \[\]):Promise](#async-proxyreducecallbackfunction-originalany--promise)
-      - [async proxy.modify(callback:Function):Promise](#async-proxymodifycallbackfunctionpromise)
-      - [async proxy.each(callback:Function):Promise](#async-proxyeachcallbackfunctionpromise)
-      - [proxy.filterSync(callback:Function):BasicDataset](#proxyfiltersynccallbackfunctionbasicdataset)
-      - [proxy.mapSync(callback:Function):BasicDataset](#proxymapsynccallbackfunctionbasicdataset)
-      - [proxy.reduceSync(callback:Function, original:any = \[\]):BasicDataset](#proxyreducesynccallbackfunction-originalany--basicdataset)
-      - [proxy.eachSync(callback:Function):BasicDataset](#proxyeachsynccallbackfunctionbasicdataset)
-      - [proxy.modifySync(callback:Function):BasicDataset](#proxymodifysynccallbackfunctionbasicdataset)
-      - [proxy.debug(message:String):BasicDataset](#proxydebugmessagestringbasicdataset)
-      - [proxy.filterByEval(callbackSource:String):Promise](#proxyfilterbyevalcallbacksourcestringpromise)
-      - [proxy.mapByEval(callbackSource:String):Promise](#proxymapbyevalcallbacksourcestringpromise)
-      - [proxy.reduceByEval(callbackSource:String, original:any = \[\]):Promise](#proxyreducebyevalcallbacksourcestring-originalany--promise)
-      - [proxy.eachByEval(callbackSource:String):Promise](#proxyeachbyevalcallbacksourcestringpromise)
-      - [proxy.modifyByEval(callbackSource:String):Promise](#proxymodifybyevalcallbacksourcestringpromise)
-      - [proxy.pipeByMatrix(signatures:Array):Promise](#proxypipebymatrixsignaturesarraypromise)
-      - [async proxy.groupByColumn(column:String):BasicDataset](#async-proxygroupbycolumncolumnstringbasicdataset)
-      - [async proxy.groupByColumns(columns:Array):BasicDataset](#async-proxygroupbycolumnscolumnsarraybasicdataset)
-      - [async proxy.groupByCallback(callback:Function):Promise](#async-proxygroupbycallbackcallbackfunctionpromise)
-      - [async proxy.groupByCallbacks(callbacks:Array):Promise](#async-proxygroupbycallbackscallbacksarraypromise)
-      - [async proxy.groupByEval(evalSource:String):Promise](#async-proxygroupbyevalevalsourcestringpromise)
-      - [async proxy.groupByEvals(evalsList:Array):Promise](#async-proxygroupbyevalsevalslistarraypromise)
-      - [proxy.sortByColumn(column:String):BasicDataset](#proxysortbycolumncolumnstringbasicdataset)
-      - [proxy.sortByColumns(columns:Array):BasicDataset](#proxysortbycolumnscolumnsarraybasicdataset)
-      - [proxy.sortByCallback(callback:Function):BasicDataset](#proxysortbycallbackcallbackfunctionbasicdataset)
-      - [proxy.sortByEval(source:String):BasicDataset](#proxysortbyevalsourcestringbasicdataset)
-      - [proxy.extendBy(overrider:Object = {}):BasicDataset](#proxyextendbyoverriderobject--basicdataset)
-      - [async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise](#async-proxyexpandrecordssourcetablestring-expandspecobject--promise)
-      - [async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromise)
+      - [`proxy = db.createDataset(dataset:Array, table:String = null)`](#proxy--dbcreatedatasetdatasetarray-tablestring--null)
+      - [`proxy.$dataset:Array`](#proxydatasetarray)
+      - [`proxy.$database:Object`](#proxydatabaseobject)
+      - [`proxy.$table:String`](#proxytablestring)
+      - [`proxy.findBySelector(selectorList:Array = []):BasicDataset`](#proxyfindbyselectorselectorlistarray--basicdataset)
+      - [`proxy.setDataset(dataset:Array):BasicDataset`](#proxysetdatasetdatasetarraybasicdataset)
+      - [`proxy.setTable(table:String):BasicDataset`](#proxysettabletablestringbasicdataset)
+      - [`proxy.setDatabase(database:Object):BasicDataset`](#proxysetdatabasedatabaseobjectbasicdataset)
+      - [`proxy.getDataset():any`](#proxygetdatasetany)
+      - [`proxy.copy():BasicDataset`](#proxycopybasicdataset)
+      - [`proxy.clone():BasicDataset`](#proxyclonebasicdataset)
+      - [`proxy.deduplicate():BasicDataset`](#proxydeduplicatebasicdataset)
+      - [`proxy.filterById(id:String):BasicDataset`](#proxyfilterbyididstringbasicdataset)
+      - [`proxy.mapById(id:String):BasicDataset`](#proxymapbyididstringbasicdataset)
+      - [`proxy.flat():BasicDataset`](#proxyflatbasicdataset)
+      - [`proxy.hasAnyOf(list:Array):BasicDataset`](#proxyhasanyoflistarraybasicdataset)
+      - [`BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset`](#basicdatasethasanyoflist1array-list2arraybasicdataset)
+      - [`async proxy.filter(callback:Function):Promise<BasicDataset>`](#async-proxyfiltercallbackfunctionpromisebasicdataset)
+      - [`async proxy.map(callback:Function):Promise<BasicDataset>`](#async-proxymapcallbackfunctionpromisebasicdataset)
+      - [`async proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`](#async-proxyreducecallbackfunction-originalany--promisebasicdataset)
+      - [`async proxy.modify(callback:Function):Promise<BasicDataset>`](#async-proxymodifycallbackfunctionpromisebasicdataset)
+      - [`async proxy.each(callback:Function):Promise<BasicDataset>`](#async-proxyeachcallbackfunctionpromisebasicdataset)
+      - [`proxy.filterSync(callback:Function):BasicDataset`](#proxyfiltersynccallbackfunctionbasicdataset)
+      - [`proxy.mapSync(callback:Function):BasicDataset`](#proxymapsynccallbackfunctionbasicdataset)
+      - [`proxy.reduceSync(callback:Function, original:any = []):BasicDataset`](#proxyreducesynccallbackfunction-originalany--basicdataset)
+      - [`proxy.eachSync(callback:Function):BasicDataset`](#proxyeachsynccallbackfunctionbasicdataset)
+      - [`proxy.modifySync(callback:Function):BasicDataset`](#proxymodifysynccallbackfunctionbasicdataset)
+      - [`proxy.debug(message:String):BasicDataset`](#proxydebugmessagestringbasicdataset)
+      - [`proxy.filterByEval(callbackSource:String):Promise<BasicDataset>`](#proxyfilterbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.mapByEval(callbackSource:String):Promise<BasicDataset>`](#proxymapbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`](#proxyreducebyevalcallbacksourcestring-originalany--promisebasicdataset)
+      - [`proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`](#proxyeachbyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`](#proxymodifybyevalcallbacksourcestringpromisebasicdataset)
+      - [`proxy.pipeByMatrix(signatures:Array):Promise<BasicDataset>`](#proxypipebymatrixsignaturesarraypromisebasicdataset)
+      - [`async proxy.groupByColumn(column:String):BasicDataset`](#async-proxygroupbycolumncolumnstringbasicdataset)
+      - [`async proxy.groupByColumns(columns:Array<String>):BasicDataset`](#async-proxygroupbycolumnscolumnsarraystringbasicdataset)
+      - [`async proxy.groupByCallback(callback:Function):Promise<BasicDataset>`](#async-proxygroupbycallbackcallbackfunctionpromisebasicdataset)
+      - [`async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`](#async-proxygroupbycallbackscallbacksarrayfunctionpromisebasicdataset)
+      - [`async proxy.groupByEval(evalSource:String):Promise<BasicDataset>`](#async-proxygroupbyevalevalsourcestringpromisebasicdataset)
+      - [`async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>`](#async-proxygroupbyevalsevalslistarraystringpromisebasicdataset)
+      - [`proxy.sortByColumn(column:String):BasicDataset`](#proxysortbycolumncolumnstringbasicdataset)
+      - [`proxy.sortByColumns(columns:Array<String>):BasicDataset`](#proxysortbycolumnscolumnsarraystringbasicdataset)
+      - [`proxy.sortByCallback(callback:Function):BasicDataset`](#proxysortbycallbackcallbackfunctionbasicdataset)
+      - [`proxy.sortByEval(source:String):BasicDataset`](#proxysortbyevalsourcestringbasicdataset)
+      - [`proxy.extendBy(overrider:Object = {}):BasicDataset`](#proxyextendbyoverriderobject--basicdataset)
+      - [`async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`](#async-proxyexpandrecordssourcetablestring-expandspecobject--promisebasicdataset)
+      - [`async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`](#async-proxyattachrecordssourcetablestring-newcolumnstring-referredtablestring-referredcolumnstringpromisebasicdataset)
   - [Query API](#query-api)
-      - [query = FlexibleDB.BasicQuery.from(overrider:Object = {})](#query--flexibledbbasicqueryfromoverriderobject--)
-      - [async query.run():Promise](#async-queryrunpromise)
-      - [query.steps:Array](#querystepsarray)
-      - [query.onError:Function|String](#queryonerrorfunctionstring)
-      - [query.wrapAsAsyncFunction(code:String, parameters:Array)](#querywrapasasyncfunctioncodestring-parametersarray)
+      - [`query = FlexibleDB.BasicQuery.from(overrider:Object = {})`](#query--flexibledbbasicqueryfromoverriderobject--)
+      - [`async query.run():Promise`](#async-queryrunpromise)
+      - [`query.steps:Array<String>`](#querystepsarraystring)
+      - [`query.onError:Function|String`](#queryonerrorfunctionstring)
+      - [`query.wrapAsAsyncFunction(code:String, parameters:Array<String>)`](#querywrapasasyncfunctioncodestring-parametersarraystring)
   - [Tree API](#tree-api)
-      - [tree = db.createTree(table:String, column:String):BasicTree](#tree--dbcreatetreetablestring-columnstringbasictree)
-      - [async tree.addBranchOf(data:Object, parent:Integer):Promise](#async-treeaddbranchofdataobject-parentintegerpromise)
-      - [async tree.getBranchesOf(parent:Integer):Promise\<Array\>](#async-treegetbranchesofparentintegerpromisearray)
-      - [async tree.dropBranch(id:Integer):Promise](#async-treedropbranchidintegerpromise)
+      - [`tree = db.createTree(table:String, column:String):BasicTree`](#tree--dbcreatetreetablestring-columnstringbasictree)
+      - [`async tree.addBranchOf(data:Object, parent:Integer):Promise<Integer>`](#async-treeaddbranchofdataobject-parentintegerpromiseinteger)
+      - [`async tree.getBranchesOf(parent:Integer):Promise<Array<Object>>`](#async-treegetbranchesofparentintegerpromisearrayobject)
+      - [`async tree.dropBranch(id:Integer):Promise<Boolean>`](#async-treedropbranchidintegerpromiseboolean)
   - [Tests](#tests)
   - [Ejemplo práctico](#ejemplo-práctico)
 
@@ -163,7 +163,7 @@ La API se descompone en varias:
 
 ## Database API
 
-#### db = FlexibleDB.create(options:Object): Object
+#### `db = FlexibleDB.create(options:Object): Object`
 
 Crea una instancia de base de datos.
 
@@ -188,11 +188,11 @@ Acepta opciones mediante `options:Object` donde puedes especificar:
 - `lockingFile:String` si quieres sobreescribir el fichero de bloqueo de persistencia por defecto. Si no, será `process.cwd() + "/db-locker.txt"`
 - `lockingCheckInterval` si quieres sobreescribir el intervalo de espera muerta en bloqueo de persistencia. Si no, será `0`.
 
-#### db.getSchema(): Object
+#### `db.getSchema(): Object`
 
 Devuelve el esquema de datos, en `this.$schema`.
 
-#### db.getRelationsSchema(): Object
+#### `db.getRelationsSchema(): Object`
 
 Devuelve el esquema de relaciones de datos, en *runtime*, se construye al vuelo.
 
@@ -205,7 +205,7 @@ En el `*` se accede a una de dos:
  - o a la `<tableId><columnId>` en *relaciones activas*.
  - o a la `<referredTable>.<columnId>` en *relaciones pasivas*.
 
-#### db.setSchema(schema:Object): void
+#### `db.setSchema(schema:Object): void`
 
 El `schema` debe ser un objeto válido que represente al esquema de datos.
 
@@ -238,17 +238,17 @@ Se espera un objeto que:
      - Si el `<table>.<column>.defaultType === 'js'`, tomará `default` como código de una función en JavaScript.
         - En este caso se espera una sentencia `"return  *";` explícita en el `default`.
 
-#### db.dehydrate(): String
+#### `db.dehydrate(): String`
 
 Devuelve un `String` representando la base de datos.
 
-#### db.hydrate(stringifiedDatabase:String): Promise<void>
+#### `db.hydrate(stringifiedDatabase:String): Promise<void>`
 
 Sobreescribe los `$ids`, `$data` y `$schema` de la base de datos con el `stringifiedDatabase` proporcionado.
 
 En `stringifiedDatabase` se espera un `String` como el que devuelve `db.dehydrate()`.
 
-#### db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>
+#### `db.selectMany(table:String, filter:Function|Array = SELECT_ALL_FILTER, withTableType:Boolean|String = false): Promise<Array>`
 
 Devuelve un `Array` con los registros donde la función `filter` ha devuelto `true`.
 
@@ -278,13 +278,17 @@ El `filter` también puede ser un array de operaciones booleanas, que aceptan lo
 
 El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en las rows.
 
-#### db.selectOne(table:String, id:Number, withTableType:Boolean = false): Promise<Object>
+Si el flag `withTableType` es un `string`, utilizará ese `string` como propiedad para indicar la tabla.
+
+#### `db.selectOne(table:String, id:Number, withTableType:Boolean|String = false): Promise<Object>`
 
 Devuelve un `Object` con el registro que tiene el `id` especificado o lanza error.
 
 El flag `withTableType`, si `true`, adjunta el campo `type = <table>` en la row.
 
-#### db.selectByUid(uid:String): Promise<Object>
+Si el flag `withTableType` es un `string`, utilizará ese `string` como propiedad para indicar la tabla.
+
+#### `db.selectByUid(uid:String): Promise<Object>`
 
 Devuelve un `Object` con el registro que tiene el `uid` especificado o lanza error.
 
@@ -292,7 +296,7 @@ El flag `withTableType` se sobreentiende como `true`.
 
 No es necesario especificar la `table` porque `uid` es universal.
 
-#### db.selectByLabel(table:String, label:String): Promise<Array>
+#### `db.selectByLabel(table:String, label:String): Promise<Array>`
 
 Devuelve un `Array` con los registros en los que aparezca `label` en las columnas con `label:true`.
 
@@ -302,7 +306,7 @@ Si la columna es tipo `string`, buscará con `===`.
 
 Si la columna es tipo `array`, buscará con `.indexOf`.
 
-#### db.selectByLabels(table:String, labels:Array<String>): Promise<Array>
+#### `db.selectByLabels(table:String, labels:Array<String>): Promise<Array>`
 
 Variante del método anterior donde se le pasa una lista de `labels` para buscar.
 
@@ -310,55 +314,55 @@ Si la columna es tipo `string`, buscará con `labels.indexOf`.
 
 Si la columna es tipo `array`, buscará con `BasicDataset.hasAnyOf`.
 
-#### db.insertOne(table:String, value:Object): Promise<Integer>
+#### `db.insertOne(table:String, value:Object): Promise<Integer>`
 
 Inserta un registro y devuelve su `id`.
 
-#### db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>
+#### `db.insertMany(table:String, values:Array<Object>): Promise<Array<Integer>>`
 
 Inserta múltiples registros y devuelve sus `ids`.
 
-#### db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>
+#### `db.updateOne(table:String, id:Integer, properties:Object): Promise<Boolean>`
 
 Actualiza un registro concreto y devuelve `true`.
 
-#### db.updateMany(table:String, filter:Function, properties:Object): Promise<Array<Integer>>
+#### `db.updateMany(table:String, filter:Function, properties:Object): Promise<Array<Integer>>`
 
 Actualiza múltiples registros y devuelve sus `id`s en un `Array`.
 
-#### db.deleteOne(table:String, id:Integer): Promise<Boolean>
+#### `db.deleteOne(table:String, id:Integer): Promise<Boolean>`
 
 Elimina un registro concreto y devuelve sus `true`.
 
-#### db.deleteMany(table:String, filter:Function): Promise<Array<Integer>>
+#### `db.deleteMany(table:String, filter:Function): Promise<Array<Integer>>`
 
 Elimina múltiples registros y devuelve sus `id`s en un `Array`.
 
-#### db.renameTable(table:String, newName:String): Promise<Boolean>
+#### `db.renameTable(table:String, newName:String): Promise<Boolean>`
 
 Renombra una tabla a otro nombre y devuelve `true`.
 
-#### db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>
+#### `db.renameColumn(table:String, column:String, newName:String): Promise<Boolean>`
 
 Renombra una columna a otro nombre y devuelve `true`.
 
-#### db.addTable(table:String): Promise<Boolean>
+#### `db.addTable(table:String): Promise<Boolean>`
 
 Añade una tabla en el `db.$schema` y devuelve `true`.
 
-#### db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>
+#### `db.addColumn(table:String, column:String, metadata:Object): Promise<Boolean>`
 
 Añade una columna en el `db.$schema` y devuelve `true`.
 
-#### db.dropTable(table:String): Promise<Boolean>
+#### `db.dropTable(table:String): Promise<Boolean>`
 
 Elimina una tabla en del `db.$schema` y devuelve `true`. Comprueba integridad referencial antes.
 
-#### db.dropColumn(table:String, column:String): Promise<Boolean>
+#### `db.dropColumn(table:String, column:String): Promise<Boolean>`
 
 Elimina una columna del `db.$schema` y devuelve `true`. No necesita comprobación de integridad referencial.
 
-#### db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>
+#### `db.modifyAll(table:String, modifier:Function, errorHandler:Function = console.log): Promise<Array>`
 
 Aplica una función, que debe devolver las propiedades que se cambian con respecto al original, a todas las rows de la tabla especificada. La función recibe:
 
@@ -375,7 +379,7 @@ En caso de error, se ejecutará el `errorHandler` que por defecto es un `console
 - `id`: el `id` de la row que ha fallado.
 - `counter`: un contador de la iteración en la que ha fallado.
 
-#### db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>
+#### `db.expandRecords(sourceTable:String, dataset:Array, expandSpec:Object): Promise<Array>`
 
 Sirve para adjuntar datos de esta tabla que se refieren a otras tablas, de forma recursiva.
 
@@ -397,7 +401,7 @@ En este ejemplo estamos suponiendo un `schema` al uso.
 Pero puedes ver los tests en [`test-of-complex-query.js`](https://github.com/allnulled/flexible-db/blob/main/test-of-complex-query.js).
 
 
-#### db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>
+#### `db.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String, dataset:Array): Promise<Array>`
 
 Sirve para adjuntar datos de otras tablas que se refieren al tipo de esta tabla, sea como `array-reference` o como `object-reference`.
 
@@ -412,13 +416,13 @@ Requiere de relaciones `array-reference` o `object-reference`, concretamente que
 
 ## Server API
 
-#### server = db.createServer(port:Integer):BasicServer
+#### `server = db.createServer(port:Integer):BasicServer`
 
 Crea una instancia de `new FlexibleDB.BasicServer` si está encuentra `global`, que sobreentiende entorno `node.js`.
 
 A continuación se expone la interfaz de `FlexibleDB.BasicServer` mediante la instancia `server`.
 
-#### server.start(port:Integer = this.$port):Promise
+#### `server.start(port:Integer = this.$port):Promise`
 
 Inicia un servidor en el puerto especificado. Si había alguno corriendo, lo sobreescribirá sin importarle su estado.
 
@@ -429,15 +433,15 @@ request.body.opcode:String = "unknown"
 request.body.parameters:Array = []
 ```
 
-#### server.login(alias:String|null, email:String|null, password:String):Promise<String>
+#### `server.login(alias:String|null, email:String|null, password:String):Promise<String>`
 
 Permite iniciar o recuperar una sesión del sistema. Utiliza o `Usuario.alias` o `Usuario.email`, y luego `Usuario.password`.
 
-#### server.logout(token:String):Promise<Boolean>
+#### `server.logout(token:String):Promise<Boolean>`
 
 Permite finalizar una sesión del sistema. Utiliza un `Sesion.token`.
 
-#### server.authenticateRequest(request:ExpressRequest):Promise<Object|Boolean>
+#### `server.authenticateRequest(request:ExpressRequest):Promise<Object|Boolean>`
 
 Permite autentificar una `request:ExpressRequest`.
 
@@ -463,11 +467,11 @@ Se devuelve una `Promise` porque es asíncrono ya que usa varios `selectMany`/`s
 
 Puede devolver `false:Boolean` si no encuentra ninguna sesión por el token proporcionado.
 
-#### server.getFirewall():AsyncFunction
+#### `server.getFirewall():AsyncFunction`
 
 Permite acceder a la función compilada del firewall.
 
-#### server.setFirewall(firewallCode:String):BasicServer
+#### `server.setFirewall(firewallCode:String):BasicServer`
 
 Permite establecer la lógica del firewall que se aplicará en las operaciones `server.operation`.
 
@@ -580,7 +584,7 @@ El ejemplo todavía no es muy completo, pero el lenguaje permite:
 
 Este lenguaje busca la **alta legibilidad** en las lógicas del **control de negocio**.
 
-#### server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)
+#### `server.triggerFirewall(operation:String, args:Array, authenticationToken:String, request:ExpressRequest, response:ExpressResponse)`
 
 Permite hacer la llamada a la función compilada de `server.setFirewall(firewallCode:String)`.
 
@@ -595,19 +599,19 @@ La función inyecta los siguientes parámetros:
 
 Esto significa que en el script que ponemos en `server.setFirewall(source)` existen por lo menos estos parametros inyectados en el espacio de nombres de la `AsyncFunction`.
 
-#### server.stop():BasicServer
+#### `server.stop():BasicServer`
 
 Permite parar el servidor que estuviera corriendo y encadenar otros métodos.
 
-#### server.clone():BasicServer
+#### `server.clone():BasicServer`
 
 Devuelve otra instancia de `BasicServer.from(...server)`.
 
-#### server.generateSessionToken():String
+#### `server.generateSessionToken():String`
 
 Método utilitario para generar tokens de sesión.
 
-#### server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null):String
+#### `server.onAuthenticate(opcode:String, args:Array, authenticationToken:String = null, request:ExpressRequest = null, response:ExpressResponse = null)`:String
 
 Método usado internamente en `server.operation` para autentificar las peticiones.
 
@@ -617,7 +621,7 @@ Este método es llamado nada más iniciar `server.operation` si se han validado 
 
 Está aparte para que se pueda sobreescribir con una clase nueva si se quiere.
 
-#### server.operation(opcode:String, args:Array):Promise<any>
+#### `server.operation(opcode:String, args:Array):Promise<any>`
 
 Ejecuta una acción contemplada en la API de `operation` pasándole los parámetros especificados.
 
@@ -787,25 +791,25 @@ switch(op) {
 
 ## Dataset API
 
-#### proxy = db.createDataset(dataset:Array, table:String = null)
+#### `proxy = db.createDataset(dataset:Array, table:String = null)`
 
 Crea una instancia de `new FlexibleDB.BasicDataset(dataset, table, db)` sobreentendiendo la `db` propia.
 
 A continuación se expone la interfaz de `FlexibleDB.BasicDataset` mediante la instancia `proxy`.
 
-#### proxy.$dataset:Array
+#### `proxy.$dataset:Array`
 
 El `dataset` sobre el que se está iterando.
 
-#### proxy.$database:Object
+#### `proxy.$database:Object`
 
 La `database` que se está usando para tipos.
 
-#### proxy.$table:String
+#### `proxy.$table:String`
 
 La `table` que se sobreentiende como tipo del `dataset`.
 
-#### proxy.findBySelector(selectorList:Array = []):BasicDataset
+#### `proxy.findBySelector(selectorList:Array = []):BasicDataset`
 
 Permite cambiar el dataset con una subselección interna y encadenar otros métodos.
 
@@ -822,58 +826,58 @@ El doble asterisco `"*", "*"` permite pasar la vista de `rows` a `columnas`, ent
 
 En el [`test-of-select-by-uid-and-others.js`](https://github.com/allnulled/flexible-db/blob/main/test-of-select-by-uid-and-others.js) está incluida una pequeña prueba.
 
-#### proxy.setDataset(dataset:Array):BasicDataset
+#### `proxy.setDataset(dataset:Array):BasicDataset`
 
 Permite cambiar el dataset y encadenar otros métodos.
 
-#### proxy.setTable(table:String):BasicDataset
+#### `proxy.setTable(table:String):BasicDataset`
 
 Permite cambiar la tabla del dataset y encadenar otros métodos.
 
-#### proxy.setDatabase(database:Object):BasicDataset
+#### `proxy.setDatabase(database:Object):BasicDataset`
 
 Permite cambiar la base de datos del dataset y encadenar otros métodos.
 
-#### proxy.getDataset():any
+#### `proxy.getDataset():any`
 
 Permite obtener el dataset propiamente.
 
-#### proxy.copy():BasicDataset
+#### `proxy.copy():BasicDataset`
 
 Permite hacer una copia JSON (con `stringify` y `parse`) del dataset y encadenar otros métodos.
 
-#### proxy.clone():BasicDataset
+#### `proxy.clone():BasicDataset`
 
 Permite hacer un clon del `BasicDataset` y encadenar otros métodos.
 
 Es útil para iterar datos de un subset o al menos una copia diferente de proxy.
 
-#### proxy.deduplicate():BasicDataset
+#### `proxy.deduplicate():BasicDataset`
 
 Permite desduplicar un conjunto de datos. Utiliza el `row.id` y si no lo encuentra, el `row` directamente.
 
 
-#### proxy.filterById(id:String):BasicDataset
+#### `proxy.filterById(id:String):BasicDataset`
 
 Permite cambiar el `this.$dataset` aplicando un `filter` por una columna concreta especificada y encadenar otros métodos.
 
-#### proxy.mapById(id:String):BasicDataset
+#### `proxy.mapById(id:String):BasicDataset`
 
 Permite cambiar el `this.$dataset` aplicando un `map` por una columna concreta especificada y encadenar otros métodos.
 
-#### proxy.flat():BasicDataset
+#### `proxy.flat():BasicDataset`
 
 Permite cambiar el `this.$dataset` aplicando un `flat` que es que si una row es 1 array, la junta como ítems no como array con las otras rows, y encadenar otros métodos.
 
-#### proxy.hasAnyOf(list:Array):BasicDataset
+#### `proxy.hasAnyOf(list:Array):BasicDataset`
 
 Permite saber si `proxy.$dataset:Array` contiene alguno de los ítems de `list:Array`.
 
-#### BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset
+#### `BasicDataset.hasAnyOf(list1:Array, list2:Array):BasicDataset`
 
 Lo mismo que la anterior pero sin sobreentender `this.$dataset` como `list1`.
 
-#### async proxy.filter(callback:Function):Promise<BasicDataset>
+#### `async proxy.filter(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `filter` asíncronamente para operar sobre el dataset.
 
@@ -881,7 +885,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.filter`.
 
-#### async proxy.map(callback:Function):Promise<BasicDataset>
+#### `async proxy.map(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `map` asíncronamente para operar sobre el dataset.
 
@@ -889,7 +893,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.map`.
 
-#### async proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>
+#### `async proxy.reduce(callback:Function, original:any = []):Promise<BasicDataset>`
 
 Permite hacer `reduce` asíncronamente para operar sobre el dataset.
 
@@ -897,7 +901,7 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.reduce`.
 
-#### async proxy.modify(callback:Function):Promise<BasicDataset>
+#### `async proxy.modify(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `modify` asíncronamente para operar sobre el dataset.
 
@@ -908,7 +912,7 @@ La firma del método incluye a:
 - `this` como el `BasicDataset`
 - `arguments[0]` como el `this.$dataset` del `BasicDataset`
 
-#### async proxy.each(callback:Function):Promise<BasicDataset>
+#### `async proxy.each(callback:Function):Promise<BasicDataset>`
 
 Permite hacer `each` asíncronamente para operar sobre el dataset.
 
@@ -916,31 +920,31 @@ Conviene usarlo con una línea aparte que iterará sobre el dataset interno, por
 
 La firma contractual de la función es la típica de `Array.prototype.each`.
 
-#### proxy.filterSync(callback:Function):BasicDataset
+#### `proxy.filterSync(callback:Function):BasicDataset`
 
 Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.filter` excepto porque permite encadenar otros métodos.
 
-#### proxy.mapSync(callback:Function):BasicDataset
+#### `proxy.mapSync(callback:Function):BasicDataset`
 
 Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.map` excepto porque permite encadenar otros métodos.
 
-#### proxy.reduceSync(callback:Function, original:any = []):BasicDataset
+#### `proxy.reduceSync(callback:Function, original:any = []):BasicDataset`
 
 Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.reduce` excepto porque permite encadenar otros métodos.
 
-#### proxy.eachSync(callback:Function):BasicDataset
+#### `proxy.eachSync(callback:Function):BasicDataset`
 
 Versión síncrona del mismo método. Es la misma firma contractual que `Array.prototype.each` excepto porque permite encadenar otros métodos.
 
-#### proxy.modifySync(callback:Function):BasicDataset
+#### `proxy.modifySync(callback:Function):BasicDataset`
 
 Versión síncrona del mismo método.
 
-#### proxy.debug(message:String):BasicDataset
+#### `proxy.debug(message:String):BasicDataset`
 
 Permite imprimir el `proxy.$dataset` adjuntando algún mensaje y encadenar otros métodos.
 
-#### proxy.filterByEval(callbackSource:String):Promise<BasicDataset>
+#### `proxy.filterByEval(callbackSource:String):Promise<BasicDataset>`
 
 Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
 
@@ -951,7 +955,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### proxy.mapByEval(callbackSource:String):Promise<BasicDataset>
+#### `proxy.mapByEval(callbackSource:String):Promise<BasicDataset>`
 
 Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
 
@@ -962,7 +966,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>
+#### `proxy.reduceByEval(callbackSource:String, original:any = []):Promise<BasicDataset>`
 
 Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
 
@@ -974,7 +978,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### proxy.eachByEval(callbackSource:String):Promise<BasicDataset>
+#### `proxy.eachByEval(callbackSource:String):Promise<BasicDataset>`
 
 Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
 
@@ -985,7 +989,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>
+#### `proxy.modifyByEval(callbackSource:String):Promise<BasicDataset>`
 
 Versión evaluativa de código, del mismo método. Tiene inyección de parámetros con:
 
@@ -996,7 +1000,7 @@ Se espera código asíncrono directamente en un `string` para la función del m�
 
 Se devuelve a sí misma pero en una `Promise` porque es código asíncrono.
 
-#### proxy.pipeByMatrix(signatures:Array):Promise<BasicDataset>
+#### `proxy.pipeByMatrix(signatures:Array):Promise<BasicDataset>`
 
 Permite procesar el `proxy.$dataset` por diferentes métodos del proxy, de golpe.
 
@@ -1014,7 +1018,7 @@ await proxy.pipeByMatrix([
 ]);
 ```
 
-#### async proxy.groupByColumn(column:String):BasicDataset
+#### `async proxy.groupByColumn(column:String):BasicDataset`
 
 Permite mutar el `proxy.$dataset` a un objeto con propiedades los valores de `proxy.$dataset[*][column]`.
 
@@ -1024,7 +1028,7 @@ El resultado será `proxy.$dataset[propiedad]:Array<Object>`.
 
 El problema de este método es que el corte es, estrictamente, el valor del campo. A menudo querremos hacer cortes de rango, y para eso, este método no nos servirá.
 
-#### async proxy.groupByColumns(columns:Array<String>):BasicDataset
+#### `async proxy.groupByColumns(columns:Array<String>):BasicDataset`
 
 Permite lo mismo que el anterior, pero estableciendo más de 1 nivel de agrupación.
 
@@ -1032,7 +1036,7 @@ De esta forma, podemos hacer `proxy.$dataset[column1][column2][column3]...` y se
 
 El problema de este método es que el corte es, estrictamente, el valor del campo. A menudo querremos hacer cortes de rango, y para eso, este método no nos servirá.
 
-#### async proxy.groupByCallback(callback:Function):Promise<BasicDataset>
+#### `async proxy.groupByCallback(callback:Function):Promise<BasicDataset>`
 
 Permite crear grupos de 1 nivel utilizando una función para saber en qué grupo cae cada row.
 
@@ -1046,7 +1050,7 @@ Por tanto, este método requiere de `proxy.$dataset:Array` al principio, y termi
 
 Solo permite agrupaciones de 1 nivel.
 
-#### async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>
+#### `async proxy.groupByCallbacks(callbacks:Array<Function>):Promise<BasicDataset>`
 
 Mismo método, pero permitiendo agrupaciones multinivel, al aceptar no 1 `Function` sino un `Array<Function>`.
 
@@ -1146,11 +1150,11 @@ Este ejemplo, en cambio, nos daría:
 
 Como se ve, `Eva` aparece en 2 categorías a la vez: `adultos` y `jovenes`. Y solo hemos devuelto un `Array<String>` con las categorías en las que queríamos que apareciera, según la lógica que quisiéramos.
 
-#### async proxy.groupByEval(evalSource:String):Promise<BasicDataset>
+#### `async proxy.groupByEval(evalSource:String):Promise<BasicDataset>`
 
 Permite llamar a `proxy.groupByCallback` pero sin usar una función, solo `string` con código asíncrono.
 
-#### async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>
+#### `async proxy.groupByEvals(evalsList:Array<String>):Promise<BasicDataset>`
 
 Permite llamar a `proxy.groupByCallbacks` pero sin usar una función, solo `string` con código asíncrono.
 
@@ -1169,21 +1173,21 @@ const proxy6 = await flexdb.createDataset([
 
 Este método es también el más completo de la saga `groupBy`, permite lo mismo que `groupByCallbacks`.
 
-#### proxy.sortByColumn(column:String):BasicDataset
+#### `proxy.sortByColumn(column:String):BasicDataset`
 
 Permite reordenar un `proxy.$dataset:Array` según el valor de una columna.
 
-#### proxy.sortByColumns(columns:Array<String>):BasicDataset
+#### `proxy.sortByColumns(columns:Array<String>):BasicDataset`
 
 Permite reordenar un `proxy.$dataset:Array` según el valor de varias columnas, donde las columnas aparecen por orden de prioridad.
 
-#### proxy.sortByCallback(callback:Function):BasicDataset
+#### `proxy.sortByCallback(callback:Function):BasicDataset`
 
 Permite reordenar un `proxy.$dataset:Array` mediante una función síncrona `sort` típica.
 
 Se le inyectan `a, b`.
 
-#### proxy.sortByEval(source:String):BasicDataset
+#### `proxy.sortByEval(source:String):BasicDataset`
 
 Versión del mismo método pero usando código síncrono en formato `string`.
 
@@ -1201,13 +1205,13 @@ flexdb.createDataset([
 
 Nos dará a Luis, Eva y Ana por este orden. Es un ejemplo.
 
-#### proxy.extendBy(overrider:Object = {}):BasicDataset
+#### `proxy.extendBy(overrider:Object = {}):BasicDataset`
 
 Permite extender/sobreescribir cualquier propiedad o método del dataset.
 
 Generalmente, interesará sobreescribir propiedades instumentales para el proceso de formateo del dataset.
 
-#### async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>
+#### `async proxy.expandRecords(sourceTable:String, expandSpec:Object = {}):Promise<BasicDataset>`
 
 Permite expandir registros del dataset con la database.
 
@@ -1215,7 +1219,7 @@ Sigue el mismo contrato de tipos que el homónimo `db.expandRecords(sourceTable,
 
 Conviene usarlo con una línea aparte que iterará sobre el dataset interno, porque es asíncrono.
 
-#### async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>
+#### `async proxy.attachRecords(sourceTable:String, newColumn:String, referredTable:String, referredColumn:String):Promise<BasicDataset>`
 
 Permite adjuntar registros del dataset con la database.
 
@@ -1229,7 +1233,7 @@ La Query API es una API muy sencilla y abierta pero que permite gestionar los pa
 
 Esto es para facilitar la conversión de APIs de interfaz gráfica a código y hacer de una `BasicQuery`, un objeto persistible fácilmente.
 
-#### query = FlexibleDB.BasicQuery.from(overrider:Object = {})
+#### `query = FlexibleDB.BasicQuery.from(overrider:Object = {})`
 
 Permite crear una `BasicQuery`.
 
@@ -1252,17 +1256,17 @@ Por defecto, `BasicQuery` introduce estos `query.steps` por defecto, que pueden 
 
 Puedes sobreescribir cualquiera con una `function` o con un `string` con código asíncrono, que `query.run()` funcionará correctamente.
 
-#### async query.run():Promise
+#### `async query.run():Promise`
 
 Permite llamar a todos los `query[query.steps[i]].call(query)` y funcionar tanto si son `function` como `string` con código asíncrono.
 
-#### query.steps:Array<String>
+#### `query.steps:Array<String>`
 
 Lista de pasos que sobreentiende `query.run` que se tienen que suceder entre sí.
 
 Sobreescribir para cambiar proceso en `query.run()`.
 
-#### query.onError:Function|String
+#### `query.onError:Function|String`
 
 Permite inyectar una función que controle los errores.
 
@@ -1277,7 +1281,7 @@ La función recibe 2 parámetros:
 
 Se puede poner en forma tanto de `function` como de `string` que gestionará el error con código plano también.
 
-#### query.wrapAsAsyncFunction(code:String, parameters:Array<String>)
+#### `query.wrapAsAsyncFunction(code:String, parameters:Array<String>)`
 
 Método utilitario para fabricar `AsyncFunction` y definir los nombres de los parámetros de la función de una vez.
 
@@ -1293,7 +1297,7 @@ Es un conjunto de métodos muy reducido de momento que permite gestionar el uso 
 
 A continuación se transmiten los métodos y clases.
 
-#### tree = db.createTree(table:String, column:String):BasicTree
+#### `tree = db.createTree(table:String, column:String):BasicTree`
 
 Permite crear un árbol desde la base de datos, especificando `table` y `column` del schema.
 
@@ -1301,7 +1305,7 @@ Se comprobará que el `db.$schema` esté apoyando esto.
 
 Se pondrán en `tree.$table` y `tree.$column`.
 
-#### async tree.addBranchOf(data:Object, parent:Integer):Promise<Integer>
+#### `async tree.addBranchOf(data:Object, parent:Integer):Promise<Integer>`
 
 Permite añadir una subbranca a una branca padre.
 
@@ -1309,13 +1313,13 @@ Sería lo mismo que sobreescribir la columna del `tree.$column` en el `data`.
 
 Por debajo hace un `db.insertOne` y lo devuelve.
 
-#### async tree.getBranchesOf(parent:Integer):Promise<Array<Object>>
+#### `async tree.getBranchesOf(parent:Integer):Promise<Array<Object>>`
 
 Permite acceder a las subbrancas de la branca especificada.
 
 Para obtener las brancas raíces, pasar `null` en `parent` es también correcto.
 
-#### async tree.dropBranch(id:Integer):Promise<Boolean>
+#### `async tree.dropBranch(id:Integer):Promise<Boolean>`
 
 Permite eliminar una branca, si es que la tesis de integridad lo permite.
 
